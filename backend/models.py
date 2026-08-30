@@ -1,18 +1,57 @@
-from pydantic import BaseModel, Field
+"""API request/response contracts (Pydantic v2).
+
+Field names and types here are mirrored by the frontend
+(frontend/src/types/api.ts) — do NOT rename or reshape them. Descriptions and
+examples are documentation-only and safe to extend.
+"""
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class DiagnosisResponse(BaseModel):
-    filename: str
-    diagnosis: str
-    confidence: float = Field(ge=0, le=1)
-    advice: str
-    needs_expert: bool
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "filename": "tomato_leaf.jpg",
+                "diagnosis": "Early Blight",
+                "confidence": 0.70,
+                "advice": "Remove affected leaves and improve airflow around the plant.",
+                "needs_expert": False,
+            }
+        }
+    )
+
+    filename: str = Field(..., description="Name of the uploaded image file.")
+    diagnosis: str = Field(..., description="Predicted disease or condition.")
+    confidence: float = Field(
+        ..., ge=0, le=1, description="Model confidence in the 0..1 range."
+    )
+    advice: str = Field(..., description="Recommended next action for the farmer.")
+    needs_expert: bool = Field(
+        ..., description="Whether the case should be escalated to a human expert."
+    )
 
 
 class FollowupRequest(BaseModel):
-    question: str = Field(min_length=1)
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {"question": "How often should I water after treatment?"}
+        }
+    )
+
+    question: str = Field(
+        ..., min_length=1, description="Farmer's follow-up question (non-empty)."
+    )
 
 
 class FollowupResponse(BaseModel):
-    question: str
-    answer: str
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "question": "How often should I water after treatment?",
+                "answer": "Keep the soil moist but not waterlogged, roughly every 2 days.",
+            }
+        }
+    )
+
+    question: str = Field(..., description="Echo of the submitted question.")
+    answer: str = Field(..., description="Assistant answer to the question.")
