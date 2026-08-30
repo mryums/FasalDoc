@@ -1,5 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 
+from backend.models import DiagnosisResponse
+from backend.services import diagnosis_service
 from backend.utils.validators import (
     validate_image_type,
     validate_image_size
@@ -8,7 +10,7 @@ from backend.utils.validators import (
 router = APIRouter()
 
 
-@router.post("/diagnose")
+@router.post("/diagnose", response_model=DiagnosisResponse)
 async def diagnose(image: UploadFile = File(...)):
 
     # 1. Check image type
@@ -28,11 +30,5 @@ async def diagnose(image: UploadFile = File(...)):
             detail="Image must be smaller than 10 MB."
         )
 
-    # 4. Temporary mock response
-    return {
-        "filename": image.filename,
-        "diagnosis": "Early Blight",
-        "confidence": 0.70,
-        "advice": "Remove affected leaves and improve airflow around the plant.",
-        "needs_expert": False
-    }
+    # 4. Delegate to diagnosis service (currently mocked, AI layer coming later)
+    return diagnosis_service.run_diagnosis(image.filename)
