@@ -1,0 +1,198 @@
+# -*- coding: utf-8 -*-
+"""Validate all generated outputs. Usage: python validate_outputs.py"""
+import csv
+import json
+import re
+from pathlib import Path
+
+import openpyxl
+
+BASE = Path(__file__).parent
+OUT = BASE / "plant_disease_dataset"
+errors, warnings = [], []
+
+# ---------------------------------------------------------------- JSON
+raw = (OUT / "crop_knowledge.json").read_bytes()
+if raw.startswith(b"\xef\xbb\xbf"):
+    errors.append("JSON has a BOM - should be plain UTF-8")
+doc = json.loads(raw.decode("utf-8"))
+
+meta = doc["meta"]
+plants = doc["plants"]
+if meta["plant_count"] != len(plants):
+    errors.append(f"meta.plant_count {meta['plant_count']} != {len(plants)}")
+total_diseases = sum(len(p["diseases"]) for p in plants)
+if meta["disease_count"] != total_diseases - 12:
+    errors.append(f"meta.disease_count mismatch: {meta['disease_count']} vs {total_diseases - 12} actual")
+if meta["healthy_entries"] != 12:
+    errors.append("healthy_entries != 12")
+if not meta.get("disclaimer") or not meta.get("disclaimer_ur"):
+    errors.append("meta disclaimer missing in EN or UR")
+
+plant_ids, disease_ids, image_ids, image_paths = [], [], [], []
+ur_pat = re.compile(r"[\u0600-\u06FF]")
+mojibake_pat = re.compile(r"[\ufffd\u00c2\u00e2]")
+
+REQUIRED_BILINGUAL = ["name", "description", "symptoms", "causes", "treatment", "prevention"]
+LIST_FIELDS = ["symptoms", "treatment", "prevention"]
+
+for p in plants:
+    pid = p.get("plant_id")
+    if not pid or pid in plant_ids:
+        errors.append(f"bad/duplicate plant_id {pid}")
+    plant_ids.append(pid)
+    for f in ["name", "category"]:
+        if not p[f]["en"] or not p[f]["ur"]:
+            errors.append(f"{pid}: {f} empty in en/ur")
+    if not ur_pat.search(p["name"]["ur"]):
+        errors.append(f"{pid}: plant name ur not Urdu script")
+    for d in p["diseases"]:
+        did = d.get("disease_id")
+        if not did or did in disease_ids:
+            errors.append(f"bad/duplicate disease_id {did} ({p['name']['en']})")
+        disease_ids.append(did)
+        for f in REQUIRED_BILINGUAL:
+            node = d.get(f)
+            if not isinstance(node, dict) or "en" not in node or "ur" not in node:
+                errors.append(f"{did}: {f} not a bilingual object")
+                continue
+            for lang in ["en", "ur"]:
+                v = node[lang]
+                if isinstance(v, list):
+                    if not v or any(not str(x).strip() for x in v):
+                        errors.append(f"{did}: {f}.{lang} empty item")
+                elif not str(v).strip():
+                    errors.append(f"{did}: {f}.{lang} empty string")
+                if mojibake_pat.search(str(v)):
+                    errors.append(f"{did}: {f}.{lang} contains mojibake")
+        # parallel arrays
+        for f in LIST_FIELDS:
+            if len(d[f]["en"]) != len(d[f]["ur"]):
+                errors.append(f"{did}: {f} en/ur length mismatch")
+        # Urdu script present in name ur
+        if not ur_pat.search(d["name"]["ur"]):
+            errors.append(f"{did}: disease name ur not Urdu script: {d['name']['ur']}")
+        # Urdu fields actually contain Urdu
+        if not ur_pat.search(d["description"]["ur"]):
+            errors.append(f"{did}: description.ur has no Urdu script")
+        if d["type"] not in ("fungal", "bacterial", "viral", "pest", "physiological", "algal", "healthy"):
+            errors.append(f"{did}: unexpected type {d['type']}")
+        if d["confidence"] not in ("high", "medium", "needs_verification"):
+            errors.append(f"{did}: unexpected confidence {d['confidence']}")
+        if not d.get("confidence_notes"):
+            errors.append(f"{did}: confidence_notes empty")
+        if d["type"] != "healthy" and not d.get("causal_agent"):
+            errors.append(f"{did}: causal_agent empty")
+        for img in d["images"]:
+            iid = img.get("id")
+            if not iid or iid in image_ids:
+                errors.append(f"bad/duplicate image id {iid}")
+            image_ids.append(iid)
+            image_paths.append(img["path"])
+            full = OUT / img["path"]
+            if not full.is_file():
+                errors.append(f"{iid}: file missing on disk: {img['path']}")
+            if img.get("status") not in ("available", "needs_review"):
+                errors.append(f"{iid}: bad status {img.get('status')}")
+            if img.get("status") == "needs_review" and not img.get("review_note"):
+                errors.append(f"{iid}: needs_review without review_note")
+
+if meta["image_count"] != len(image_ids):
+    errors.append(f"meta.image_count {meta['image_count']} != {len(image_ids)}")
+
+# unique image file paths
+if len(set(image_paths)) != len(image_paths):
+    dupes = {x for x in image_paths if image_paths.count(x) > 1}
+    errors.append(f"duplicate image paths: {dupes}")
+
+# duplicates of (plant, disease)
+pairs = [(p["name"]["en"], d["name"]["en"]) for p in plants for d in p["diseases"]]
+if len(set(pairs)) != len(pairs):
+    errors.append("duplicate (plant, disease) pairs exist")
+
+# ---------------------------------------------------------------- CSV
+with open(OUT / "image_mapping.csv", encoding="utf-8-sig") as f:
+    rows = list(csv.DictReader(f))
+if len(rows) != 116:
+    errors.append(f"CSV has {len(rows)} rows, expected 116")
+csv_ids = [r["image_id"] for r in rows]
+if sorted(csv_ids) != sorted(image_ids):
+    errors.append("CSV image ids differ from JSON image ids")
+for r in rows:
+    if mojibake_pat.search(r["review_note"]):
+        errors.append(f"CSV {r['image_id']}: mojibake in review_note")
+    if not (OUT / r["image_path"]).is_file():
+        errors.append(f"CSV {r['image_id']}: file missing {r['image_path']}")
+statuses = {r["status"] for r in rows}
+if statuses - {"available", "needs_review"}:
+    errors.append(f"CSV unexpected statuses {statuses}")
+
+# ---------------------------------------------------------------- Excel
+wb = openpyxl.load_workbook(OUT / "crop_knowledge_enhanced.xlsx")
+if wb.sheetnames != ["Dataset", "Image Mapping", "Quality Log"]:
+    errors.append(f"Excel sheets: {wb.sheetnames}")
+
+ws = wb["Dataset"]
+if ws.max_row != 63:  # header + 50 diseases + 12 healthy
+    errors.append(f"Dataset sheet has {ws.max_row} rows, expected 63")
+if ws.max_column != 28:
+    errors.append(f"Dataset sheet has {ws.max_column} cols, expected 28")
+hdr = [c.value for c in ws[1]]
+expected_hdr = ["plant_id", "plant_name", "plant_name_urdu", "scientific_name", "category",
+                "disease_id", "disease_name", "disease_name_urdu", "disease_type", "causal_agent",
+                "aliases", "description", "description_urdu", "symptoms", "symptoms_urdu",
+                "causes", "causes_urdu", "treatment", "treatment_urdu", "prevention",
+                "prevention_urdu", "image_paths", "image_label", "image_count", "source_name",
+                "source_url", "confidence", "confidence_notes"]
+if hdr != expected_hdr:
+    errors.append("Dataset header mismatch")
+xl_ids = [ws.cell(row=r, column=6).value for r in range(2, ws.max_row + 1)]
+if xl_ids != disease_ids:
+    errors.append("Excel disease_id column differs from JSON order")
+for r in range(2, ws.max_row + 1):
+    for c in range(1, 29):
+        v = ws.cell(row=r, column=c).value
+        if v and mojibake_pat.search(str(v)):
+            errors.append(f"Excel Dataset r{r}c{c}: mojibake")
+    # every non-healthy row must have non-empty core fields
+    if ws.cell(row=r, column=9).value != "healthy":
+        for c in [2, 3, 7, 8, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 27]:
+            if not str(ws.cell(row=r, column=c).value or "").strip():
+                errors.append(f"Excel Dataset r{r} col {expected_hdr[c-1]} empty")
+
+ws2 = wb["Image Mapping"]
+if ws2.max_row != 117:
+    errors.append(f"Image Mapping sheet has {ws2.max_row} rows, expected 117")
+ws3 = wb["Quality Log"]
+if ws3.max_row < 22:
+    errors.append(f"Quality Log has only {ws3.max_row} rows")
+
+# ---------------------------------------------------------------- image files on disk
+img_files = list((OUT / "images").rglob("*"))
+img_files = [f for f in img_files if f.is_file()]
+if len(img_files) != 116:
+    errors.append(f"disk images {len(img_files)} != 116")
+bad_names = [f.name for f in img_files if not re.match(r"^[a-z0-9_]+_(healthy|[a-z0-9_]+)_\d{2}\.(jpg|png|webp)$", f.name)]
+if bad_names:
+    errors.append(f"non-normalised image names: {bad_names[:5]}")
+bad_ext = [f.name for f in img_files if f.suffix.lower() in (".jfif", ".jpeg")]
+if bad_ext:
+    errors.append(f"unnormalised extensions: {bad_ext}")
+
+# source folder untouched
+src = Path(r"C:\Users\DELL\Downloads\demo photos")
+src_count = sum(1 for f in src.rglob("*") if f.is_file())
+if src_count != 116:
+    warnings.append(f"source folder now has {src_count} files (expected 116)")
+
+print(f"Plants: {len(plants)} | disease entries: {len(disease_ids)} (50 diseases + 12 healthy) | images: {len(image_ids)}")
+print(f"JSON size: {raw.count(chr(10).encode())} lines, {len(raw)/1024:.0f} KB")
+print(f"Confidence distribution:", {c: sum(1 for p in plants for d in p['diseases'] if d['confidence'] == c) for c in ['high', 'medium', 'needs_verification']})
+if warnings:
+    print("WARNINGS:", warnings)
+if errors:
+    print(f"\nFAILED - {len(errors)} error(s):")
+    for e in errors[:40]:
+        print(" -", e)
+    raise SystemExit(1)
+print("\nALL CHECKS PASSED")
