@@ -1,0 +1,1 @@
+Run the app with the default mock responses out of the box; set `DASHSCOPE_API_KEY` to enable the real Qwen/DashScope provider. CORS origins can be overridden via the `CORS_ALLOW_ORIGINS` comma-separated env var (default allows Vite dev server at localhost:5173).

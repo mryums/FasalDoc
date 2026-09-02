@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: documentation
+title: Project Documentation & Demo Artifacts
+scope:
+    - documentation/
+    - demo_backup/
+source_files: []
+depends_on: []
+related_to: []

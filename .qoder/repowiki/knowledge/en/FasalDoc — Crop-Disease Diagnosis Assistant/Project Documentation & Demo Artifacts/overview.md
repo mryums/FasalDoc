@@ -1,0 +1,1 @@
+Holds static documentation artifacts including a generated test report CSV and a Render deployment configuration for the FasalDoc backend demo.

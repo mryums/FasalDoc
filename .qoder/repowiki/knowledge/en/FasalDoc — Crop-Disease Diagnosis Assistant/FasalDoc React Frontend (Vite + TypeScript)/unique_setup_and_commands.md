@@ -1,0 +1,1 @@
+Development server runs on port 5173 via `npm run dev`. Build pipeline first type-checks with `tsc -b` then bundles with `vite build`. Backend base URL is configured through the `VITE_API_BASE_URL` environment variable (defaults to `http://localhost:8000`).

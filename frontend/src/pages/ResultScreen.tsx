@@ -4,6 +4,7 @@ import { ConfidenceIndicator, confidenceBand } from '../components/ConfidenceInd
 import { Button } from '../components/Button'
 import { ErrorMessage } from '../components/ErrorMessage'
 import { AlertIcon, RefreshIcon } from '../components/icons'
+import { agricultureData, type DiseaseInfo } from '../data/agriculture'
 
 interface ResultScreenProps {
   diagnosis: DiagnosisResponse | null
@@ -38,6 +39,9 @@ export function ResultScreen({
   }
 
   const band = confidenceBand(diagnosis.confidence)
+
+  // Try to enrich with Member 4 data
+  const enrichedInfo = diseaseLookupFromDiagnosis(diagnosis.diagnosis)
 
   return (
     <div className="screen result">
@@ -80,6 +84,50 @@ export function ResultScreen({
         )}
       </section>
 
+      {/* Member 4 enriched data - only shown when a match is found */}
+      {enrichedInfo && (
+        <>
+          {enrichedInfo.symptoms && enrichedInfo.symptoms.length > 0 && (
+            <section className="card result__detail" aria-labelledby="symptoms-heading">
+              <h2 id="symptoms-heading" className="result__detail-title">
+                {t.result.symptomsTitle}
+              </h2>
+              <ul className="result__detail-list">
+                {enrichedInfo.symptoms.map((s, i) => (
+                  <li key={i}>{s}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {enrichedInfo.treatment && enrichedInfo.treatment.length > 0 && (
+            <section className="card result__detail" aria-labelledby="treatment-heading">
+              <h2 id="treatment-heading" className="result__detail-title">
+                {t.result.treatmentTitle}
+              </h2>
+              <ol className="result__detail-list result__detail-list--ordered">
+                {enrichedInfo.treatment.map((tr, i) => (
+                  <li key={i}>{tr}</li>
+                ))}
+              </ol>
+            </section>
+          )}
+
+          {enrichedInfo.prevention && enrichedInfo.prevention.length > 0 && (
+            <section className="card result__detail" aria-labelledby="prevention-heading">
+              <h2 id="prevention-heading" className="result__detail-title">
+                {t.result.preventionTitle}
+              </h2>
+              <ul className="result__detail-list">
+                {enrichedInfo.prevention.map((p, i) => (
+                  <li key={i}>{p}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </>
+      )}
+
       <div className="result__actions">
         <Button onClick={onAskFollowup}>{t.result.followupCta}</Button>
         <Button variant="secondary" onClick={onNewDiagnosis}>
@@ -89,4 +137,33 @@ export function ResultScreen({
       </div>
     </div>
   )
+}
+
+/**
+ * Try to extract disease info from the diagnosis string.
+ * The backend returns diagnosis like "Early Blight" — we match against
+ * Member 4's disease names using fuzzy matching.
+ */
+function diseaseLookupFromDiagnosis(
+  diagnosisText: string,
+): { symptoms: string[]; treatment: string[]; prevention: string[] } | null {
+  const diagLower = diagnosisText.toLowerCase().trim()
+
+  for (const plant of agricultureData.plants) {
+    for (const disease of plant.diseases) {
+      const nameLower = disease.name.en.toLowerCase()
+      if (
+        nameLower === diagLower ||
+        diagLower.includes(nameLower) ||
+        nameLower.includes(diagLower)
+      ) {
+        return {
+          symptoms: disease.symptoms?.en ?? [],
+          treatment: disease.treatment?.en ?? [],
+          prevention: disease.prevention?.en ?? [],
+        }
+      }
+    }
+  }
+  return null
 }

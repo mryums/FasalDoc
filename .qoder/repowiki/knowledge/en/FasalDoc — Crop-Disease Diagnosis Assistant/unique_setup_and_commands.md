@@ -1,0 +1,1 @@
+Start the backend from the repo root with `uvicorn backend.main:app --reload --port 8000` after `pip install -r requirements.txt`; start the frontend with `cd frontend && npm install && npm run dev` pointing at `http://localhost:8000`; run all tests with `pytest` from the root (no network or AI calls).

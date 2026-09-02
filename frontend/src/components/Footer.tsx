@@ -7,6 +7,7 @@ export function Footer() {
     <footer className="footer">
       <div className="footer__inner">
         <p className="footer__disclaimer">{t.footer.disclaimer}</p>
+        <p className="footer__privacy">{t.privacy.notice}</p>
         <p className="footer__tagline">
           <SproutIcon size={16} />
           {t.footer.builtFor}

@@ -1,0 +1,1 @@
+Plain Python modules (no framework) for authoring; UTF-8 JSON + Excel (.xlsx) + CSV as the published data formats; images in JPG/PNG/WebP under a flat `images/{plant}/` layout with lowercase, no-space filenames safe for cross-platform URLs.

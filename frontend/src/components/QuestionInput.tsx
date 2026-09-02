@@ -1,11 +1,12 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useLanguage } from '../i18n/LanguageContext'
 import { MicIcon } from './icons'
+import { VoiceInput } from './VoiceInput'
 
 /**
- * Voice-ready input: text today, microphone later.
- * A future VoiceInput can replace/extend `trailing` without touching
- * the diagnosis flow — the component contract stays the same.
+ * Voice-ready input: text field with active microphone integration.
+ * When the mic button is clicked, opens VoiceInput overlay for speech-to-text.
+ * The transcribed text is passed back and populates the input field.
  */
 interface QuestionInputProps {
   id: string
@@ -29,6 +30,7 @@ export function QuestionInput({
   trailing,
 }: QuestionInputProps) {
   const { t, lang } = useLanguage()
+  const [showVoice, setShowVoice] = useState(false)
   const shared = {
     id,
     value,
@@ -40,27 +42,54 @@ export function QuestionInput({
     ) => onChange(e.target.value),
   }
 
+  function handleVoiceConfirm(text: string) {
+    onChange(text)
+    setShowVoice(false)
+  }
+
+  function handleMicClick() {
+    // Check if speech recognition is available
+    const w = window as any
+    const hasSR = w.SpeechRecognition ?? w.webkitSpeechRecognition
+    if (!hasSR) {
+      // Show unsupported message briefly via alert
+      alert(t.voice.unsupported)
+      return
+    }
+    setShowVoice(true)
+  }
+
   return (
-    <div className="question-input">
-      {singleLine ? (
-        <input type="text" className="question-input__field" {...shared} />
-      ) : (
-        <textarea className="question-input__field" rows={3} {...shared} />
-      )}
-      <div className="question-input__trailing">
-        {trailing ?? (
-          <button
-            type="button"
-            className="question-input__mic"
-            disabled
-            title={t.upload.micComingSoon}
-            aria-label={t.upload.micComingSoon}
-          >
-            <MicIcon size={20} />
-          </button>
+    <>
+      <div className="question-input">
+        {singleLine ? (
+          <input type="text" className="question-input__field" {...shared} />
+        ) : (
+          <textarea className="question-input__field" rows={3} {...shared} />
         )}
-        {lang !== 'en' && <span className="question-input__hint">{t.upload.questionHelp}</span>}
+        <div className="question-input__trailing">
+          {trailing ?? (
+            <button
+              type="button"
+              className="question-input__mic question-input__mic--active"
+              onClick={handleMicClick}
+              disabled={disabled}
+              title={t.voice.speak}
+              aria-label={t.voice.speak}
+            >
+              <MicIcon size={20} />
+            </button>
+          )}
+          {lang !== 'en' && <span className="question-input__hint">{t.upload.questionHelp}</span>}
+        </div>
       </div>
-    </div>
+
+      {showVoice && (
+        <VoiceInput
+          onConfirm={handleVoiceConfirm}
+          onClose={() => setShowVoice(false)}
+        />
+      )}
+    </>
   )
 }

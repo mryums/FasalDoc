@@ -1,0 +1,1 @@
+FastAPI + Uvicorn for the backend, React + Vite + TypeScript for the frontend, pytest with httpx for offline integration tests, and environment-driven configuration via `.env` files shared between backend and frontend build-time variables.

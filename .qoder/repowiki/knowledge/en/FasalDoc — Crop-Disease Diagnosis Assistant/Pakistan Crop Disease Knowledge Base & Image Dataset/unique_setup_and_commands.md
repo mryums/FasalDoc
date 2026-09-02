@@ -1,0 +1,1 @@
+No build script — the dataset is maintained by editing `crop_knowledge_enhanced.xlsx` and regenerating `crop_knowledge.json` / `image_mapping.csv`; the README documents how to load the JSON in both JavaScript (`fetch(...).then(r => r.json())`) and Python (`json.load(open(..., encoding='utf-8'))`).

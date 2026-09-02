@@ -1,0 +1,1 @@
+React 19 + ReactDOM, TypeScript ~5.8, Vite 7 with `@vitejs/plugin-react`; builds are typed via `tsc -b` before `vite build`. No UI framework or router library — styling uses plain CSS modules split into `tokens.css` (design tokens) and `global.css`.

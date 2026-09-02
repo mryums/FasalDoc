@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: ""
+title: FasalDoc — Crop-Disease Diagnosis Assistant
+scope:
+    - README.md
+    - .gitignore
+    - requirements.txt
+    - .env.example
+source_files: []
+depends_on: []
+related_to: []

@@ -1,0 +1,2 @@
+- Test case data is defined inline as a list-of-lists with a header row before being written out via `csv.writer.writerows`.
+- Output directories are created lazily with `os.makedirs(..., exist_ok=True)` before file writes.

@@ -1,0 +1,1 @@
+React/TypeScript SPA built with Vite that lets farmers upload crop images, run AI-powered diagnosis via a FastAPI backend, and continue with follow-up Q&A, including auth, i18n, and camera/voice input.

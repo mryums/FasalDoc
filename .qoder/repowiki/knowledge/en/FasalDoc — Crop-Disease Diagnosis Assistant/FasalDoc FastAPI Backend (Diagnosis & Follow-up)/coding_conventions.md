@@ -1,0 +1,6 @@
+- Endpoints declare `response_model` from `backend.models` and group themselves under descriptive tags (e.g., `diagnosis`, `followup`, `health`).
+- Input validation is delegated to pure functions in `utils/validators.py` rather than inline checks inside route handlers.
+- Route handlers wrap service calls in try/except blocks that re-raise `HTTPException` unchanged and convert any other exception into a generic 500 error to avoid leaking internal/AI errors.
+- Service implementations conform to the `DiagnosisProvider` Protocol, enabling interchangeable mock and real providers without changing route code.
+- Pydantic models use `model_config = ConfigDict(json_schema_extra={...})` to embed example payloads for OpenAPI documentation.
+- Configuration is read from environment variables (`CORS_ALLOW_ORIGINS`, `DASHSCOPE_API_KEY`) with sensible defaults instead of being hardcoded.

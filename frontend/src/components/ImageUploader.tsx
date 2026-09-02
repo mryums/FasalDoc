@@ -1,6 +1,7 @@
 import { useRef, useState, type ChangeEvent } from 'react'
 import { useLanguage } from '../i18n/LanguageContext'
 import { CameraIcon, TrashIcon, UploadIcon } from './icons'
+import { CameraCapture } from './CameraCapture'
 
 interface ImageUploaderProps {
   file: File | null
@@ -21,11 +22,27 @@ export function ImageUploader({
   const galleryInput = useRef<HTMLInputElement>(null)
   const cameraInput = useRef<HTMLInputElement>(null)
   const [dragOver, setDragOver] = useState(false)
+  const [showCamera, setShowCamera] = useState(false)
 
   function handlePicked(e: ChangeEvent<HTMLInputElement>) {
     const picked = e.target.files?.[0]
     if (picked) onSelect(picked)
     e.target.value = ''
+  }
+
+  function handleCameraCapture(capturedFile: File) {
+    onSelect(capturedFile)
+    setShowCamera(false)
+  }
+
+  function handleCameraClick() {
+    // Check if getUserMedia is available
+    if (typeof navigator !== 'undefined' && navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
+      setShowCamera(true)
+    } else {
+      // Fallback to file input with capture attribute
+      cameraInput.current?.click()
+    }
   }
 
   const accept = 'image/jpeg,image/png,image/webp'
@@ -73,70 +90,79 @@ export function ImageUploader({
   }
 
   return (
-    <div
-      className={`uploader ${dragOver ? 'uploader--dragover' : ''}`}
-      onDragOver={(e) => {
-        e.preventDefault()
-        setDragOver(true)
-      }}
-      onDragLeave={() => setDragOver(false)}
-      onDrop={(e) => {
-        e.preventDefault()
-        setDragOver(false)
-        const dropped = e.dataTransfer.files?.[0]
-        if (dropped) onSelect(dropped)
-      }}
-    >
-      <button
-        type="button"
-        className="uploader__empty"
-        onClick={() => galleryInput.current?.click()}
-        disabled={disabled}
+    <>
+      <div
+        className={`uploader ${dragOver ? 'uploader--dragover' : ''}`}
+        onDragOver={(e) => {
+          e.preventDefault()
+          setDragOver(true)
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault()
+          setDragOver(false)
+          const dropped = e.dataTransfer.files?.[0]
+          if (dropped) onSelect(dropped)
+        }}
       >
-        <UploadIcon size={34} className="uploader__empty-icon" />
-        <span className="uploader__empty-label">{t.upload.dropPhoto}</span>
-        <span className="uploader__formats">{t.upload.formatsNote}</span>
-      </button>
-      <div className="uploader__buttons">
         <button
           type="button"
-          className="uploader__pick"
+          className="uploader__empty"
           onClick={() => galleryInput.current?.click()}
           disabled={disabled}
         >
-          <UploadIcon size={18} />
-          {t.upload.choosePhoto}
+          <UploadIcon size={34} className="uploader__empty-icon" />
+          <span className="uploader__empty-label">{t.upload.dropPhoto}</span>
+          <span className="uploader__formats">{t.upload.formatsNote}</span>
         </button>
-        <button
-          type="button"
-          className="uploader__pick"
-          onClick={() => cameraInput.current?.click()}
-          disabled={disabled}
-        >
-          <CameraIcon size={18} />
-          {t.upload.useCamera}
-        </button>
+        <div className="uploader__buttons">
+          <button
+            type="button"
+            className="uploader__pick"
+            onClick={() => galleryInput.current?.click()}
+            disabled={disabled}
+          >
+            <UploadIcon size={18} />
+            {t.upload.choosePhoto}
+          </button>
+          <button
+            type="button"
+            className="uploader__pick"
+            onClick={handleCameraClick}
+            disabled={disabled}
+          >
+            <CameraIcon size={18} />
+            {t.upload.useCamera}
+          </button>
+        </div>
+        <input
+          ref={galleryInput}
+          type="file"
+          accept={accept}
+          onChange={handlePicked}
+          className="visually-hidden-input"
+          tabIndex={-1}
+          aria-label={t.upload.choosePhoto}
+        />
+        <input
+          ref={cameraInput}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handlePicked}
+          className="visually-hidden-input"
+          tabIndex={-1}
+          aria-label={t.upload.useCamera}
+        />
       </div>
-      <input
-        ref={galleryInput}
-        type="file"
-        accept={accept}
-        onChange={handlePicked}
-        className="visually-hidden-input"
-        tabIndex={-1}
-        aria-label={t.upload.choosePhoto}
-      />
-      <input
-        ref={cameraInput}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        onChange={handlePicked}
-        className="visually-hidden-input"
-        tabIndex={-1}
-        aria-label={t.upload.useCamera}
-      />
-    </div>
+
+      {showCamera && (
+        <CameraCapture
+          onCapture={handleCameraCapture}
+          onClose={() => setShowCamera(false)}
+        />
+      )}
+    </>
   )
 }
 

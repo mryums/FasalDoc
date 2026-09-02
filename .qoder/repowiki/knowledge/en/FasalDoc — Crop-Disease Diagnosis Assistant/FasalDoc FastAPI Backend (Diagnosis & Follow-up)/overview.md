@@ -1,0 +1,1 @@
+FastAPI backend exposing crop-disease image diagnosis and follow-up Q&A endpoints, with a pluggable AI provider that falls back to deterministic mock responses when no cloud credentials are configured.

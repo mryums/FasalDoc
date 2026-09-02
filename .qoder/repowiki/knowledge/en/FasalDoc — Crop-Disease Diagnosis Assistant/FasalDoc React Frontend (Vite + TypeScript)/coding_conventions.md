@@ -1,0 +1,6 @@
+- Application flow is modeled as a single `useReducer` with a discriminated union of action types; screens are selected by a `screen` string field rather than a router.
+- All network requests go through `services/api.ts`, which wraps `fetch` and throws a typed `ApiError` with a `kind` discriminator (`validation`, `network`, `server`) instead of letting raw responses bubble up.
+- Backend contract types in `types/api.ts` mirror the FastAPI Pydantic models exactly and are imported by both the API service and pages to keep request/response shapes in sync.
+- User-facing strings are never hardcoded; they are resolved via the `useLanguage()` hook's `t` object from `i18n/translations.ts`, enabling English, Urdu, and Romanized Urdu.
+- Persistent user preferences (language, auth session, registered accounts) are stored in `localStorage` under named keys (`fasaldoc-lang`, `fasaldoc-session`, `fasaldoc-accounts`) with try/catch fallbacks when storage is unavailable.
+- Reusable UI logic is extracted into small presentational components under `components/` (e.g., `CameraCapture`, `VoiceInput`, `ImageUploader`, `ChatMessage`) and composed by page components rather than implemented inline.

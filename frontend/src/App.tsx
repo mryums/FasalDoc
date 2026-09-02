@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { useLanguage } from './i18n/LanguageContext'
 import { Navbar } from './components/Navbar'
 import { Footer } from './components/Footer'
@@ -7,6 +7,9 @@ import { UploadScreen } from './pages/UploadScreen'
 import { AnalyzingScreen } from './pages/AnalyzingScreen'
 import { ResultScreen } from './pages/ResultScreen'
 import { FollowUpScreen } from './pages/FollowUpScreen'
+import { LoginScreen } from './pages/LoginScreen'
+import { SignupScreen } from './pages/SignupScreen'
+import { DashboardScreen } from './pages/DashboardScreen'
 import type { ChatMessageData } from './components/ChatMessage'
 import type { DiagnosisResponse } from './types/api'
 import {
@@ -16,8 +19,14 @@ import {
   validateImageFile,
   type ImageValidationError,
 } from './services/api'
+import {
+  isAuthenticated,
+  getCurrentUser,
+  logout as authLogout,
+  type AuthUser,
+} from './services/auth'
 
-type Screen = 'home' | 'upload' | 'analyzing' | 'result' | 'followup'
+type Screen = 'login' | 'signup' | 'dashboard' | 'home' | 'upload' | 'analyzing' | 'result' | 'followup'
 
 interface FlowState {
   screen: Screen
@@ -33,6 +42,9 @@ interface FlowState {
 }
 
 type Action =
+  | { type: 'go-login' }
+  | { type: 'go-signup' }
+  | { type: 'go-dashboard' }
   | { type: 'go-home' }
   | { type: 'go-upload' }
   | { type: 'pick-file'; file: File; previewUrl: string }
@@ -49,7 +61,7 @@ type Action =
   | { type: 'reset' }
 
 const initialState: FlowState = {
-  screen: 'home',
+  screen: 'login',
   file: null,
   previewUrl: null,
   question: '',
@@ -63,8 +75,14 @@ const initialState: FlowState = {
 
 function reducer(state: FlowState, action: Action): FlowState {
   switch (action.type) {
+    case 'go-login':
+      return { ...initialState, screen: 'login' }
+    case 'go-signup':
+      return { ...initialState, screen: 'signup' }
+    case 'go-dashboard':
+      return { ...initialState, screen: 'dashboard' }
     case 'go-home':
-      return { ...initialState }
+      return { ...initialState, screen: 'dashboard' }
     case 'go-upload':
       return { ...initialState, screen: 'upload' }
     case 'pick-file':
@@ -110,15 +128,38 @@ function reducer(state: FlowState, action: Action): FlowState {
     case 'followup-error':
       return { ...state, sending: false, sendError: action.error }
     case 'reset':
-      return { ...initialState, screen: 'upload' }
+      return { ...state, screen: 'upload', file: null, previewUrl: null, question: '', uploadError: null, diagnosis: null, diagnoseError: null, messages: [], sending: false, sendError: null }
   }
 }
 
 export default function App() {
   const { t } = useLanguage()
   const [state, dispatch] = useReducer(reducer, initialState)
+  const [user, setUser] = useState<AuthUser | null>(null)
   const idCounter = useRef(0)
   const diagnosisRan = useRef(false)
+
+  // Check auth on mount
+  useEffect(() => {
+    if (isAuthenticated()) {
+      const currentUser = getCurrentUser()
+      setUser(currentUser)
+      dispatch({ type: 'go-dashboard' })
+    } else {
+      dispatch({ type: 'go-login' })
+    }
+  }, [])
+
+  function handleLogin(loggedInUser: AuthUser) {
+    setUser(loggedInUser)
+    dispatch({ type: 'go-dashboard' })
+  }
+
+  function handleLogout() {
+    authLogout()
+    setUser(null)
+    dispatch({ type: 'go-login' })
+  }
 
   const imageValidationError = useCallback(
     (code: ImageValidationError): string => {
@@ -196,6 +237,7 @@ export default function App() {
   }
 
   const screen = state.screen
+  const isAuthenticatedFlow = screen !== 'login' && screen !== 'signup'
 
   const prevPreview = useRef<string | null>(null)
   useEffect(() => {
@@ -208,11 +250,41 @@ export default function App() {
   return (
     <div className="app-shell">
       <Navbar
-        showNewDiagnosis={screen === 'upload' || screen === 'result' || screen === 'followup'}
+        showNewDiagnosis={
+          isAuthenticatedFlow && (screen === 'upload' || screen === 'result' || screen === 'followup')
+        }
+        showLogout={isAuthenticatedFlow}
+        showDashboard={isAuthenticatedFlow}
         onNewDiagnosis={() => dispatch({ type: 'reset' })}
+        onLogout={handleLogout}
+        onDashboard={() => dispatch({ type: 'go-dashboard' })}
       />
 
       <main className="app-main">
+        {screen === 'login' && (
+          <LoginScreen
+            onLogin={handleLogin}
+            onGoSignup={() => dispatch({ type: 'go-signup' })}
+          />
+        )}
+
+        {screen === 'signup' && (
+          <SignupScreen
+            onSignup={handleLogin}
+            onGoLogin={() => dispatch({ type: 'go-login' })}
+          />
+        )}
+
+        {screen === 'dashboard' && user && (
+          <DashboardScreen
+            user={user}
+            onUploadPhoto={() => dispatch({ type: 'go-upload' })}
+            onUseCamera={() => dispatch({ type: 'go-upload' })}
+            onAskQuestion={() => dispatch({ type: 'go-upload' })}
+            onVoiceInput={() => dispatch({ type: 'go-upload' })}
+          />
+        )}
+
         {screen === 'home' && <HomeScreen onStart={() => dispatch({ type: 'go-upload' })} />}
 
         {screen === 'upload' && (

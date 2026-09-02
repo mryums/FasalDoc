@@ -1,0 +1,1 @@
+Python stdlib (`csv`, `os`) for report generation; YAML-based Render platform config declaring a uvicorn-backed FastAPI app.

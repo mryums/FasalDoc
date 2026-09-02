@@ -1,0 +1,1 @@
+Bilingual (English/Urdu) plant-disease knowledge dataset and curated image collection covering 12 crops, 50 diseases, and healthy entries for the FasalDoc diagnosis website.

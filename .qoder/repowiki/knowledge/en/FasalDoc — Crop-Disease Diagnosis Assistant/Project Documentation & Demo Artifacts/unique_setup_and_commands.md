@@ -1,0 +1,1 @@
+Run `python documentation/generate_report.py` from the repository root to regenerate `documentation/Member5_Testing_Report.csv`; deploy the demo backend on Render using the provided `render.yaml` which expects a `requirements.txt` and a `backend.main:app` ASGI entry point.

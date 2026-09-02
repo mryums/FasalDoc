@@ -1,0 +1,6 @@
+- Every user-facing text field is stored as a `{"en": ..., "ur": ...}` object so the frontend can render based on a language toggle without duplicating content.
+- Symptom, treatment, and prevention lists are kept as parallel arrays of short strings where index i in English equals index i in Urdu, enabling side-by-side bullet rendering.
+- Each disease record carries stable identifiers (`plant_id` PL001–PL012, `disease_id` DS001+), an `images` array with unique `id` IMG### and relative `path`, and a `confidence` field describing dataset quality rather than model prediction score.
+- Source attribution is preserved per entry via `source.name` and `source.url` (e.g., PlantVillage/Kaggle, Wheat Disease Images/Zenodo, university extension pages), with typos corrected in the published JSON.
+- Plant metadata is centralised in `plants.py` (`PLANTS`, `PLANT_SLUGS`, `FOLDER_TO_PLANT`) and referenced by slug rather than duplicated across parts, keeping canonical names consistent across the three part files.
+- Image assets follow a strict naming convention `{plant}_{disease}_{nn}.{ext}` under `images/{plant}/`, with status marked as `available` or `needs_review` to gate hero-image selection.

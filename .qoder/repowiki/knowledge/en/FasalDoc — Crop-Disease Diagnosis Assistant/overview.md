@@ -1,0 +1,1 @@
+Monorepo wiring a FastAPI backend, a React/Vite frontend, a bilingual crop-disease knowledge dataset, and deployment docs into an offline-first crop-disease diagnosis assistant.

@@ -1,0 +1,1 @@
+FastAPI + Pydantic v2 for request/response modeling; optional Alibaba Cloud DashScope (Qwen) integration gated by the `DASHSCOPE_API_KEY` environment variable, with an offline mock fallback.

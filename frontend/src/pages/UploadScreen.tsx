@@ -3,6 +3,7 @@ import { ImageUploader } from '../components/ImageUploader'
 import { QuestionInput } from '../components/QuestionInput'
 import { Button } from '../components/Button'
 import { ErrorMessage } from '../components/ErrorMessage'
+import { ShieldIcon } from '../components/icons'
 
 interface UploadScreenProps {
   file: File | null
@@ -55,6 +56,11 @@ export function UploadScreen({
       <Button className="upload-screen__submit" onClick={onDiagnose}>
         {t.upload.diagnose}
       </Button>
+
+      <p className="privacy-notice">
+        <ShieldIcon size={14} />
+        {t.privacy.notice}
+      </p>
     </div>
   )
 }

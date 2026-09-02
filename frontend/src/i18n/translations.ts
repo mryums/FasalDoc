@@ -6,6 +6,7 @@ export interface Translation {
 
   nav: {
     newDiagnosis: string
+    logout: string
   }
 
   home: {
@@ -62,6 +63,11 @@ export interface Translation {
     followupCta: string
     newDiagnosis: string
     imageLabel: string
+    symptomsTitle: string
+    treatmentTitle: string
+    preventionTitle: string
+    moreInfo: string
+    noMoreInfo: string
   }
 
   followup: {
@@ -80,6 +86,75 @@ export interface Translation {
     retry: string
   }
 
+  auth: {
+    loginTitle: string
+    signupTitle: string
+    email: string
+    name: string
+    password: string
+    confirmPassword: string
+    loginButton: string
+    signupButton: string
+    loggingIn: string
+    signingUp: string
+    noAccount: string
+    hasAccount: string
+    goSignup: string
+    goLogin: string
+    errors: {
+      emailRequired: string
+      nameRequired: string
+      passwordRequired: string
+      passwordShort: string
+      passwordMismatch: string
+      invalidEmail: string
+      loginFailed: string
+      signupFailed: string
+    }
+  }
+
+  dashboard: {
+    greeting: string
+    subtitle: string
+    uploadPhoto: string
+    uploadDesc: string
+    useCamera: string
+    cameraDesc: string
+    askQuestion: string
+    askDesc: string
+    voiceInput: string
+    voiceDesc: string
+    recentActivity: string
+    noRecent: string
+    startDiagnosis: string
+  }
+
+  camera: {
+    title: string
+    capture: string
+    retake: string
+    usePhoto: string
+    cancel: string
+    permissionDenied: string
+    unsupported: string
+    loading: string
+  }
+
+  voice: {
+    listening: string
+    stop: string
+    speak: string
+    transcript: string
+    confirm: string
+    cancel: string
+    unsupported: string
+    editHint: string
+  }
+
+  privacy: {
+    notice: string
+  }
+
   footer: {
     disclaimer: string
     builtFor: string
@@ -91,7 +166,7 @@ export const translations: Record<Language, Translation> = {
     appName: 'FasalDoc',
     tagline: 'Understand Your Crop. Protect Your Harvest.',
 
-    nav: { newDiagnosis: 'New Diagnosis' },
+    nav: { newDiagnosis: 'New Diagnosis', logout: 'Logout' },
 
     home: {
       headline: 'Understand Your Crop. Protect Your Harvest.',
@@ -154,6 +229,11 @@ export const translations: Record<Language, Translation> = {
       followupCta: 'Ask FasalDoc a Question',
       newDiagnosis: 'New Diagnosis',
       imageLabel: 'Your crop photo',
+      symptomsTitle: 'Symptoms',
+      treatmentTitle: 'Treatment',
+      preventionTitle: 'Prevention',
+      moreInfo: 'More Information from Crop Knowledge Base',
+      noMoreInfo: 'No additional information available for this diagnosis.',
     },
 
     followup: {
@@ -178,13 +258,82 @@ export const translations: Record<Language, Translation> = {
         'FasalDoc gives guidance based on the photo you share. For serious crop problems, always consult your local agriculture office.',
       builtFor: 'Built for farmers of Pakistan',
     },
+
+    auth: {
+      loginTitle: 'Welcome Back',
+      signupTitle: 'Create Account',
+      email: 'Email',
+      name: 'Full Name',
+      password: 'Password',
+      confirmPassword: 'Confirm Password',
+      loginButton: 'Log In',
+      signupButton: 'Sign Up',
+      loggingIn: 'Logging in...',
+      signingUp: 'Creating account...',
+      noAccount: "Don't have an account?",
+      hasAccount: 'Already have an account?',
+      goSignup: 'Sign Up',
+      goLogin: 'Log In',
+      errors: {
+        emailRequired: 'Please enter your email.',
+        nameRequired: 'Please enter your name.',
+        passwordRequired: 'Please enter your password.',
+        passwordShort: 'Password must be at least 6 characters.',
+        passwordMismatch: 'Passwords do not match.',
+        invalidEmail: 'Please enter a valid email address.',
+        loginFailed: 'Login failed. Please check your credentials.',
+        signupFailed: 'Signup failed. Please try again.',
+      },
+    },
+
+    dashboard: {
+      greeting: 'Welcome back, {name}!',
+      subtitle: 'What would you like to do today?',
+      uploadPhoto: 'Upload Photo',
+      uploadDesc: 'Choose a crop photo from your device for diagnosis.',
+      useCamera: 'Use Camera',
+      cameraDesc: 'Take a live photo of your crop for instant analysis.',
+      askQuestion: 'Ask a Question',
+      askDesc: 'Type or speak your agriculture question.',
+      voiceInput: 'Voice Input',
+      voiceDesc: 'Speak your question instead of typing.',
+      recentActivity: 'Recent Activity',
+      noRecent: 'No recent diagnoses. Start a new one!',
+      startDiagnosis: 'Start New Diagnosis',
+    },
+
+    camera: {
+      title: 'Camera',
+      capture: 'Capture',
+      retake: 'Retake',
+      usePhoto: 'Use Photo',
+      cancel: 'Cancel',
+      permissionDenied: 'Camera permission was denied. Please allow camera access in your browser settings.',
+      unsupported: 'Your browser does not support live camera. Please use the photo upload option instead.',
+      loading: 'Starting camera...',
+    },
+
+    voice: {
+      listening: 'Listening...',
+      stop: 'Stop',
+      speak: 'Tap the microphone and speak',
+      transcript: 'What we heard:',
+      confirm: 'Use This Text',
+      cancel: 'Cancel',
+      unsupported: 'Voice input is not supported in this browser. Please type your question instead.',
+      editHint: 'You can edit the text above before confirming.',
+    },
+
+    privacy: {
+      notice: 'Your uploaded images, voice input, and questions are processed by FasalDoc\'s AI service to provide crop diagnosis and recommendations.',
+    },
   },
 
   ur: {
     appName: 'فصل ڈاکٹر',
     tagline: 'اپنی فصل کو پہچانیں، اپنی پیداوار بچائیں۔',
 
-    nav: { newDiagnosis: 'نئی جانچ' },
+    nav: { newDiagnosis: 'نئی جانچ', logout: 'لاگ آؤٹ' },
 
     home: {
       headline: 'اپنی فصل کو پہچانیں، اپنی پیداوار بچائیں۔',
@@ -247,6 +396,11 @@ export const translations: Record<Language, Translation> = {
       followupCta: 'فصل ڈاکٹر سے سوال پوچھیں',
       newDiagnosis: 'نئی جانچ',
       imageLabel: 'آپ کی فصل کی تصویر',
+      symptomsTitle: 'علامات',
+      treatmentTitle: 'علاج',
+      preventionTitle: 'وقاحت',
+      moreInfo: 'فصل علم کے ذخیرے سے مزید معلومات',
+      noMoreInfo: 'اس تشخیص کے لیے مزید معلومات دستیاب نہیں ہیں۔',
     },
 
     followup: {
@@ -271,13 +425,82 @@ export const translations: Record<Language, Translation> = {
         'فصل ڈاکٹر آپ کی بھیجی گئی تصویر کی بنیاد پر رہنمائی دیتا ہے۔ سنگین مسائل کے لیے ہمیشہ اپنے قریبی زراعت کے دفتر سے مشورہ کریں۔',
       builtFor: 'پاکستان کے کسانوں کے لیے بنایا گیا',
     },
+
+    auth: {
+      loginTitle: 'خوش آمدید',
+      signupTitle: 'اکاؤنٹ بنائیں',
+      email: 'ای میل',
+      name: 'پورا نام',
+      password: 'پاس ورڈ',
+      confirmPassword: 'پاس ورڈ کی تصدیق',
+      loginButton: 'لاگ ان',
+      signupButton: 'سائن اپ',
+      loggingIn: 'لاگ ان ہو رہا ہے...',
+      signingUp: 'اکاؤنٹ بنایا جا رہا ہے...',
+      noAccount: 'اکاؤنٹ نہیں ہے؟',
+      hasAccount: 'پہلے سے اکاؤنٹ ہے؟',
+      goSignup: 'سائن اپ کریں',
+      goLogin: 'لاگ ان کریں',
+      errors: {
+        emailRequired: 'براہ کرم اپنا ای میل درج کریں۔',
+        nameRequired: 'براہ کرم اپنا نام درج کریں۔',
+        passwordRequired: 'براہ کرم اپنا پاس ورڈ درج کریں۔',
+        passwordShort: 'پاس ورڈ کم از کم 6 حروف کا ہونا چاہیے۔',
+        passwordMismatch: 'پاس ورڈ میچ نہیں کرتے۔',
+        invalidEmail: 'براہ کرم درست ای میل ایڈریس درج کریں۔',
+        loginFailed: 'لاگ ان ناکام۔ براہ کرم اپنی تفصیلات چیک کریں۔',
+        signupFailed: 'سائن اپ ناکام۔ براہ کرم دوبارہ کوشش کریں۔',
+      },
+    },
+
+    dashboard: {
+      greeting: 'خوش آمدید، {name}!',
+      subtitle: 'آج آپ کیا کرنا چاہیں گے؟',
+      uploadPhoto: 'تصویر اپ لوڈ کریں',
+      uploadDesc: 'تشخیص کے لیے اپنے آلے سے فصل کی تصویر منتخب کریں۔',
+      useCamera: 'کیمرہ استعمال کریں',
+      cameraDesc: 'فوری تجزیے کے لیے اپنی فصل کی براہ راست تصویر لیں۔',
+      askQuestion: 'سوال پوچھیں',
+      askDesc: 'اپنا زرعی سوال ٹائپ کریں یا بولیں۔',
+      voiceInput: 'آواز سے ان پٹ',
+      voiceDesc: 'ٹائپ کرنے کے بجائے اپنا سوال بولیں۔',
+      recentActivity: 'حالیہ سرگرمی',
+      noRecent: 'کوئی حالیہ تشخیص نہیں۔ نئی شروع کریں!',
+      startDiagnosis: 'نئی تشخیص شروع کریں',
+    },
+
+    camera: {
+      title: 'کیمرہ',
+      capture: 'تصویر لیں',
+      retake: 'دوبارہ لیں',
+      usePhoto: 'یہ تصویر استعمال کریں',
+      cancel: 'منسوخ کریں',
+      permissionDenied: 'کیمرے کی اجازت نہیں دی گئی۔ براہ کرم اپنے براؤزر کی سیٹنگز میں کیمرے کی رسائی کی اجازت دیں۔',
+      unsupported: 'آپ کا براؤزر لائیو کیمرے کو سپورٹ نہیں کرتا۔ براہ کرم تصویر اپ لوڈ کا آپشن استعمال کریں۔',
+      loading: 'کیمرہ شروع ہو رہا ہے...',
+    },
+
+    voice: {
+      listening: 'سن رہا ہے...',
+      stop: 'رکیں',
+      speak: 'مائیکروفون ٹیپ کریں اور بولیں',
+      transcript: 'جو ہم نے سنا:',
+      confirm: 'یہ متن استعمال کریں',
+      cancel: 'منسوخ کریں',
+      unsupported: 'اس براؤزر میں آواز سے ان پٹ سپورٹ نہیں ہے۔ براہ کرم اپنا سوال ٹائپ کریں۔',
+      editHint: 'تصدیق سے پہلے آپ اوپر کا متن تبدیل کر سکتے ہیں۔',
+    },
+
+    privacy: {
+      notice: 'آپ کی اپ لوڈ کردہ تصاویر، آواز کا ان پٹ اور سوالات فصل ڈاکٹر کی اے آئی سروس کے ذریعے فصل کی تشخیص اور سفارشات فراہم کرنے کے لیے پروسیس کیے جاتے ہیں۔',
+    },
   },
 
   rom: {
     appName: 'FasalDoc',
     tagline: 'Apni fasal ko pehchanain, apni paidawar bachayen.',
 
-    nav: { newDiagnosis: 'Nayi Jaanch' },
+    nav: { newDiagnosis: 'Nayi Jaanch', logout: 'Logout' },
 
     home: {
       headline: 'Apni fasal ko pehchanain, apni paidawar bachayen.',
@@ -340,6 +563,11 @@ export const translations: Record<Language, Translation> = {
       followupCta: 'FasalDoc Se Sawal Poochein',
       newDiagnosis: 'Nayi Jaanch',
       imageLabel: 'Aap ki fasal ki tasveer',
+      symptomsTitle: 'Alaamat',
+      treatmentTitle: 'Ilaaj',
+      preventionTitle: 'Bachao',
+      moreInfo: 'Fasal ilm ke zakhire se mazeed maloomat',
+      noMoreInfo: 'Is tashkhees ke liye mazeed maloomat dastiyab nahi hain.',
     },
 
     followup: {
@@ -363,6 +591,75 @@ export const translations: Record<Language, Translation> = {
       disclaimer:
         'FasalDoc aap ki bheji gayi tasveer ki bunyad par rehnumai deta hai. Sanjeeda masail ke liye hamesha apne qareebi zarayat ke daftar se mashwara karein.',
       builtFor: 'Pakistan ke kisanon ke liye banaya gaya',
+    },
+
+    auth: {
+      loginTitle: 'Khush Aamdeed',
+      signupTitle: 'Account Banayen',
+      email: 'Email',
+      name: 'Pura Naam',
+      password: 'Password',
+      confirmPassword: 'Password Ki Tasdeeq',
+      loginButton: 'Log In',
+      signupButton: 'Sign Up',
+      loggingIn: 'Log in ho raha hai...',
+      signingUp: 'Account banaya ja raha hai...',
+      noAccount: 'Account nahi hai?',
+      hasAccount: 'Pehle se account hai?',
+      goSignup: 'Sign Up Karein',
+      goLogin: 'Log In Karein',
+      errors: {
+        emailRequired: 'Barah-e-karam apna email darj karein.',
+        nameRequired: 'Barah-e-karam apna naam darj karein.',
+        passwordRequired: 'Barah-e-karam apna password darj karein.',
+        passwordShort: 'Password kam az kam 6 haroof ka hona chahiye.',
+        passwordMismatch: 'Password match nahi karte.',
+        invalidEmail: 'Barah-e-karam durust email address darj karein.',
+        loginFailed: 'Login nakaam. Barah-e-karam apni tafseelat check karein.',
+        signupFailed: 'Sign up nakaam. Barah-e-karam dobara koshish karein.',
+      },
+    },
+
+    dashboard: {
+      greeting: 'Khush aamdeed, {name}!',
+      subtitle: 'Aaj aap kya karna chahein ge?',
+      uploadPhoto: 'Tasveer Upload Karein',
+      uploadDesc: 'Tashkhees ke liye apne aalay se fasal ki tasveer select karein.',
+      useCamera: 'Camera Istemal Karein',
+      cameraDesc: 'Fori tajziye ke liye apni fasal ki live tasveer lein.',
+      askQuestion: 'Sawal Poochein',
+      askDesc: 'Apna zarai sawal type karein ya boleyn.',
+      voiceInput: 'Aawaz Se Input',
+      voiceDesc: 'Type karne ke bajaye apna sawal boleyn.',
+      recentActivity: 'Haaliya Sargarmi',
+      noRecent: 'Koi haaliya tashkhees nahi. Nayi shuru karein!',
+      startDiagnosis: 'Nayi Tashkhees Shuru Karein',
+    },
+
+    camera: {
+      title: 'Camera',
+      capture: 'Tasveer Lein',
+      retake: 'Dobara Lein',
+      usePhoto: 'Yeh Tasveer Istemal Karein',
+      cancel: 'Mansoogh Karein',
+      permissionDenied: 'Camera ki ijazat nahi di gayi. Barah-e-karam apne browser ki settings mein camera ki rasai ki ijazat dain.',
+      unsupported: 'Aap ka browser live camera ko support nahi karta. Barah-e-karam tasveer upload ka option istemal karein.',
+      loading: 'Camera shuru ho raha hai...',
+    },
+
+    voice: {
+      listening: 'Sun raha hai...',
+      stop: 'Rukein',
+      speak: 'Microphone tap karein aur boleyn',
+      transcript: 'Jo hum ne suna:',
+      confirm: 'Yeh Matn Istemal Karein',
+      cancel: 'Mansoogh Karein',
+      unsupported: 'Is browser mein aawaz se input support nahi hai. Barah-e-karam apna sawal type karein.',
+      editHint: 'Tasdeeq se pehle aap oopar ka matn tabdeel kar sakte hain.',
+    },
+
+    privacy: {
+      notice: 'Aap ki upload ki gayi tasweerein, aawaz ka input aur sawalaat FasalDoc ki AI service ke zariye fasal ki tashkhees aur tajaweez faraham karne ke liye process kiye jate hain.',
     },
   },
 }

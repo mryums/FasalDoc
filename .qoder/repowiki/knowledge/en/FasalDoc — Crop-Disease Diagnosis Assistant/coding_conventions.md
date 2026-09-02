@@ -1,0 +1,3 @@
+- Runtime configuration is loaded exclusively from environment variables defined in `.env.example` rather than hard-coded constants.
+- External AI capabilities are accessed through a protocol-backed provider pattern that transparently falls back to mock implementations when credentials are absent.
+- All development servers expose their URLs via environment variables (`BACKEND_PORT`, `CORS_ALLOW_ORIGINS`, `VITE_API_BASE_URL`) so local dev runs require no code changes.
