@@ -126,3 +126,83 @@ def test_service_run_diagnosis_matches_model():
 
 def test_service_answer_followup_returns_string():
     assert isinstance(diagnosis_service.answer_followup("why?"), str)
+
+
+# --- Member 2 context & optional question tests -----------------------------
+
+def test_diagnose_with_optional_question():
+    diagnosis_service.reset_provider()
+    response = client.post(
+        "/diagnose",
+        files={"image": VALID_IMAGE},
+        data={"question": "Why are yellow spots appearing on leaves?"},
+    )
+    assert response.status_code == 200
+    ctx = diagnosis_service.get_latest_context()
+    assert ctx is not None
+    assert ctx["original_question"] == "Why are yellow spots appearing on leaves?"
+    assert ctx["diagnosis"] == "Early Blight"
+    assert ctx["confidence"] == 0.70
+
+
+def test_diagnose_without_question_sets_none_original_question():
+    diagnosis_service.reset_provider()
+    response = client.post("/diagnose", files={"image": VALID_IMAGE})
+    assert response.status_code == 200
+    ctx = diagnosis_service.get_latest_context()
+    assert ctx is not None
+    assert ctx["original_question"] is None
+
+
+def test_session_context_used_in_followup():
+    diagnosis_service.reset_provider()
+
+    # Create a spy provider to verify context is received
+    received_contexts = []
+
+    class ContextSpyProvider:
+        def diagnose(self, image: diagnosis_service.ImageInput) -> dict:
+            return {
+                "filename": image.filename,
+                "diagnosis": "Powdery Mildew",
+                "confidence": 0.85,
+                "advice": "Apply fungicide.",
+                "needs_expert": False,
+            }
+
+        def answer_followup(self, question: str, context: diagnosis_service.Optional[dict] = None) -> str:
+            received_contexts.append((question, context))
+            return f"Answer for '{question}' with diag={context.get('diagnosis') if context else None}"
+
+    diagnosis_service._provider = ContextSpyProvider()
+
+    # Step 1: Diagnose with question
+    diag_resp = client.post(
+        "/diagnose",
+        files={"image": VALID_IMAGE},
+        data={"question": "What is this white powder?"},
+    )
+    assert diag_resp.status_code == 200
+    assert diag_resp.json()["diagnosis"] == "Powdery Mildew"
+
+    # Step 2: Ask follow-up
+    followup_resp = client.post(
+        "/ask-followup",
+        json={"question": "How often to apply fungicide?"},
+    )
+    assert followup_resp.status_code == 200
+    assert "Answer for 'How often to apply fungicide?' with diag=Powdery Mildew" in followup_resp.json()["answer"]
+
+    # Verify context details passed to provider
+    assert len(received_contexts) == 1
+    q, ctx = received_contexts[0]
+    assert q == "How often to apply fungicide?"
+    assert ctx == {
+        "diagnosis": "Powdery Mildew",
+        "confidence": 0.85,
+        "advice": "Apply fungicide.",
+        "needs_expert": False,
+        "original_question": "What is this white powder?",
+    }
+    diagnosis_service.reset_provider()
+

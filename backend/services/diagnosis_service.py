@@ -35,6 +35,7 @@ class ImageInput:
     filename: str
     content_type: str
     data: bytes
+    question: Optional[str] = None
 
 
 class DiagnosisProvider(Protocol):
@@ -96,6 +97,7 @@ def _build_provider() -> DiagnosisProvider:
 
 
 _provider: Optional[DiagnosisProvider] = None
+_latest_context: Optional[dict] = None
 
 
 def get_provider() -> DiagnosisProvider:
@@ -105,10 +107,28 @@ def get_provider() -> DiagnosisProvider:
     return _provider
 
 
+def get_latest_context() -> Optional[dict]:
+    """Retrieve the current in-memory session context from the last diagnosis."""
+    return _latest_context
+
+
+def set_latest_context(context: Optional[dict]) -> None:
+    """Update the in-memory session context."""
+    global _latest_context
+    _latest_context = context
+
+
+def clear_context() -> None:
+    """Clear the stored session context."""
+    global _latest_context
+    _latest_context = None
+
+
 def reset_provider() -> None:
-    """Clear the cached provider. Intended for tests / runtime reconfiguration."""
-    global _provider
+    """Clear the cached provider and session context. Intended for tests / runtime reconfiguration."""
+    global _provider, _latest_context
     _provider = None
+    _latest_context = None
 
 
 # --- Helpers used by the routes -------------------------------------------
@@ -118,10 +138,22 @@ def run_diagnosis(
     *,
     data: bytes = b"",
     content_type: str = "image/jpeg",
+    question: Optional[str] = None,
 ) -> dict:
-    image = ImageInput(filename=filename, content_type=content_type, data=data)
-    return get_provider().diagnose(image)
+    image = ImageInput(filename=filename, content_type=content_type, data=data, question=question)
+    result = get_provider().diagnose(image)
+    set_latest_context({
+        "diagnosis": result.get("diagnosis"),
+        "confidence": result.get("confidence"),
+        "advice": result.get("advice"),
+        "needs_expert": result.get("needs_expert"),
+        "original_question": question,
+    })
+    return result
 
 
 def answer_followup(question: str, context: Optional[dict] = None) -> str:
+    if context is None:
+        context = get_latest_context()
     return get_provider().answer_followup(question, context)
+

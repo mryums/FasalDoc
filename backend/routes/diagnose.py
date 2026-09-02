@@ -1,4 +1,6 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from typing import Optional
+
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 
 from backend.models import DiagnosisResponse
 from backend.services import diagnosis_service
@@ -16,7 +18,10 @@ router = APIRouter()
     summary="Diagnose a crop disease from an uploaded image",
     tags=["diagnosis"],
 )
-async def diagnose(image: UploadFile = File(...)):
+async def diagnose(
+    image: UploadFile = File(...),
+    question: Optional[str] = Form(None),
+):
 
     # 1. Check image type
     if not validate_image_type(image.content_type):
@@ -42,12 +47,15 @@ async def diagnose(image: UploadFile = File(...)):
             detail="Image must be smaller than 10 MB."
         )
 
+    clean_question = question.strip() if question and question.strip() else None
+
     # 5. Delegate to the diagnosis service (mock offline, real AI later)
     try:
         return diagnosis_service.run_diagnosis(
             image.filename,
             data=image_data,
             content_type=image.content_type,
+            question=clean_question,
         )
     except HTTPException:
         raise
