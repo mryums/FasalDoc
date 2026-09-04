@@ -40,9 +40,8 @@ def get_provider():
         api_key = os.getenv("DASHSCOPE_API_KEY")
 
         if api_key:
-            # AI provider will be connected later.
-            # For now, keep the system offline and safe.
-            _provider = MockDiagnosisProvider()
+            from services.qwen_provider import QwenDiagnosisProvider
+            _provider = QwenDiagnosisProvider()
         else:
             _provider = MockDiagnosisProvider()
 
