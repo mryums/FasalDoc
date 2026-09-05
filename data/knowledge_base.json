@@ -1,0 +1,129 @@
+[
+  {
+    "id": "cotton_leaf_curl_virus",
+    "crop": "Cotton",
+    "issue_name_english": "Cotton Leaf Curl Virus (CLCuV)",
+    "issue_name_urdu": "کاٹن لیف کرل وائرس",
+    "symptom_keywords": ["curling", "upward curling", "leaf curl", "thickened veins", "stunted growth", "yellowing"],
+    "likely_causes_urdu": "یہ بیماری سفید مکھی (whitefly) کے ذریعے پھیلتی ہے۔",
+    "low_cost_treatment_urdu": [
+      "متاثرہ پودوں کو جلد از جلد اکھاڑ کر تلف کریں تاکہ وائرس نہ پھیلے۔",
+      "سفید مکھی کے کنٹرول کے لیے پیلے چپکنے والے کارڈ (yellow sticky traps) کھیت میں لگائیں۔",
+      "نیم کے تیل کا سپرے سفید مکھی کو کم کرنے میں مددگار ہو سکتا ہے۔"
+    ],
+    "prevention_tips_urdu": [
+      "وائرس مزاحم (resistant) بیج کی اقسام استعمال کریں۔",
+      "کھیت کے ارد گرد جڑی بوٹیاں صاف رکھیں جو سفید مکھی کا ٹھکانہ بن سکتی ہیں۔"
+    ]
+  },
+  {
+    "id": "wheat_yellow_rust",
+    "crop": "Wheat",
+    "issue_name_english": "Wheat Yellow (Stripe) Rust",
+    "issue_name_urdu": "گندم کی پیلی زنگ",
+    "symptom_keywords": ["yellow stripes", "yellow spots", "powdery", "rust", "orange pustules", "leaf stripes"],
+    "likely_causes_urdu": "یہ ایک فنگل بیماری ہے جو ٹھنڈے اور نم موسم میں تیزی سے پھیلتی ہے۔",
+    "low_cost_treatment_urdu": [
+      "ابتدائی مرحلے میں سلفر یا مینکوزیب (Mancozeb) پر مبنی فنگسائیڈ سپرے کریں۔",
+      "متاثرہ پتوں کو ہاتھ سے ہٹا کر جلا دیں تاکہ بیماری نہ پھیلے۔"
+    ],
+    "prevention_tips_urdu": [
+      "زنگ کے خلاف مزاحم گندم کی اقسام کاشت کریں۔",
+      "فصل کی گنجائش (density) زیادہ نہ رکھیں تاکہ ہوا کی گزر آسان ہو۔"
+    ]
+  },
+  {
+    "id": "tomato_early_blight",
+    "crop": "Tomato",
+    "issue_name_english": "Tomato Early Blight",
+    "issue_name_urdu": "ٹماٹر کی ابتدائی جھلساؤ بیماری",
+    "symptom_keywords": ["brown spots", "dark spots", "concentric rings", "leaf drop", "yellowing lower leaves"],
+    "likely_causes_urdu": "یہ فنگل بیماری زیادہ نمی اور پرانے پتوں سے شروع ہوتی ہے۔",
+    "low_cost_treatment_urdu": [
+      "متاثرہ نچلے پتے فوری طور پر توڑ کر تلف کریں۔",
+      "کاپر پر مبنی سپرے (copper-based fungicide) استعمال کریں۔",
+      "پودوں کے درمیان مناسب فاصلہ رکھیں تاکہ ہوا کی گزر بہتر ہو۔"
+    ],
+    "prevention_tips_urdu": [
+      "اوپر سے پانی دینے کے بجائے جڑوں کے قریب پانی دیں۔",
+      "فصل کی ادل بدل (crop rotation) کریں۔"
+    ]
+  },
+  {
+    "id": "aphid_infestation",
+    "crop": "General / Multiple crops",
+    "issue_name_english": "Aphid (Plant Lice) Infestation",
+    "issue_name_urdu": "تیله (چیپا) کا حملہ",
+    "symptom_keywords": ["curling leaves", "sticky residue", "small insects", "clusters of insects", "stunted new growth"],
+    "likely_causes_urdu": "چھوٹے نرم جسم والے کیڑے جو پتوں کا رس چوستے ہیں۔",
+    "low_cost_treatment_urdu": [
+      "صابن والے پانی کا سپرے (mild soap water spray) براہِ راست کیڑوں پر کریں۔",
+      "نیم کے تیل کا محلول ہفتہ وار سپرے کریں۔",
+      "لیڈی بگ جیسے قدرتی دشمن کیڑوں کو کھیت میں پنپنے دیں۔"
+    ],
+    "prevention_tips_urdu": [
+      "زیادہ نائٹروجن کھاد کے استعمال سے گریز کریں کیونکہ یہ تیلے کو راغب کرتی ہے۔"
+    ]
+  },
+  {
+    "id": "powdery_mildew",
+    "crop": "General / Vegetables",
+    "issue_name_english": "Powdery Mildew",
+    "issue_name_urdu": "سفید پھپھوندی (پاؤڈری میلڈیو)",
+    "symptom_keywords": ["white powder", "white patches", "powdery coating", "white spots on leaves"],
+    "likely_causes_urdu": "یہ فنگس خشک دن اور نم راتوں والے موسم میں زیادہ پھیلتی ہے۔",
+    "low_cost_treatment_urdu": [
+      "ایک چمچ بیکنگ سوڈا ایک لیٹر پانی میں ملا کر متاثرہ پتوں پر سپرے کریں۔",
+      "سلفر پر مبنی فنگسائیڈ استعمال کریں۔"
+    ],
+    "prevention_tips_urdu": [
+      "پودوں کے درمیان مناسب فاصلہ رکھیں تاکہ ہوا کی گزر بہتر رہے۔"
+    ]
+  },
+  {
+    "id": "nitrogen_deficiency",
+    "crop": "General",
+    "issue_name_english": "Nitrogen Deficiency",
+    "issue_name_urdu": "نائٹروجن کی کمی",
+    "symptom_keywords": ["yellowing", "pale green", "uniform yellowing", "older leaves yellow", "stunted growth"],
+    "likely_causes_urdu": "زمین میں نائٹروجن کی کمی، خاص طور پر پرانے پتوں کا یکساں پیلا ہونا۔",
+    "low_cost_treatment_urdu": [
+      "یوریا کھاد مناسب مقدار میں ڈالیں (مقامی زرعی مرکز سے مقدار معلوم کریں)۔",
+      "گوبر کی کھاد یا کمپوسٹ کا استعمال کریں۔"
+    ],
+    "prevention_tips_urdu": [
+      "وقتاً فوقتاً مٹی کا ٹیسٹ کروائیں تاکہ کھاد کی صحیح مقدار معلوم ہو۔"
+    ]
+  },
+  {
+    "id": "fruit_borer",
+    "crop": "Tomato / Chili / Cotton",
+    "issue_name_english": "Fruit / Bollworm Borer",
+    "issue_name_urdu": "پھل کا سنڈی کا حملہ (بور کیڑا)",
+    "symptom_keywords": ["holes in fruit", "boring holes", "caterpillar", "damaged fruit", "holes in bolls"],
+    "likely_causes_urdu": "سنڈی پھل یا ٹینڈے کے اندر داخل ہو کر نقصان پہنچاتی ہے۔",
+    "low_cost_treatment_urdu": [
+      "متاثرہ پھل/ٹینڈے فوری طور پر توڑ کر تلف کریں۔",
+      "فیرومون ٹریپس (pheromone traps) لگائیں تاکہ نر کیڑے پکڑے جائیں۔"
+    ],
+    "prevention_tips_urdu": [
+      "کھیت کا باقاعدہ معائنہ کریں تاکہ حملہ ابتدائی مرحلے میں پکڑا جائے۔"
+    ]
+  },
+  {
+    "id": "bacterial_leaf_spot",
+    "crop": "General / Vegetables",
+    "issue_name_english": "Bacterial Leaf Spot",
+    "issue_name_urdu": "بیکٹیریل لیف سپاٹ",
+    "symptom_keywords": ["water-soaked spots", "dark spots with yellow halo", "wet lesions", "leaf spots"],
+    "likely_causes_urdu": "یہ بیماری بیکٹیریا کی وجہ سے ہوتی ہے اور زیادہ نمی میں پھیلتی ہے۔",
+    "low_cost_treatment_urdu": [
+      "متاثرہ پتے فوری طور پر ہٹا دیں۔",
+      "کاپر پر مبنی سپرے استعمال کریں۔",
+      "اوپر سے پانی دینے سے گریز کریں۔"
+    ],
+    "prevention_tips_urdu": [
+      "صاف اور تصدیق شدہ بیج استعمال کریں۔"
+    ]
+  }
+]

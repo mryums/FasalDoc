@@ -4,7 +4,7 @@ import { ConfidenceIndicator, confidenceBand } from '../components/ConfidenceInd
 import { Button } from '../components/Button'
 import { ErrorMessage } from '../components/ErrorMessage'
 import { AlertIcon, RefreshIcon } from '../components/icons'
-import { agricultureData, type DiseaseInfo } from '../data/agriculture'
+import { agricultureData } from '../data/agriculture'
 
 interface ResultScreenProps {
   diagnosis: DiagnosisResponse | null

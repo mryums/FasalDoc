@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLanguage } from '../i18n/LanguageContext'
 import { Button } from './Button'
-import { CameraIcon, RefreshIcon, TrashIcon, XIcon } from './icons'
+import { CameraIcon, RefreshIcon, XIcon } from './icons'
 
 interface CameraCaptureProps {
   onCapture: (file: File) => void

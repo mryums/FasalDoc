@@ -118,6 +118,16 @@ def test_service_falls_back_to_mock_without_credentials(monkeypatch):
     assert isinstance(provider, diagnosis_service.MockDiagnosisProvider)
 
 
+def test_service_selects_qwen_provider_when_configured(monkeypatch):
+    monkeypatch.setenv("DASHSCOPE_API_KEY", "sk-test-valid-key")
+    diagnosis_service.reset_provider()
+    provider = diagnosis_service.get_provider()
+    from backend.services.qwen_provider import QwenDiagnosisProvider
+    assert isinstance(provider, QwenDiagnosisProvider)
+    diagnosis_service.reset_provider()
+
+
+
 def test_service_run_diagnosis_matches_model():
     result = diagnosis_service.run_diagnosis("x.png", data=b"abc", content_type="image/png")
     assert result["filename"] == "x.png"

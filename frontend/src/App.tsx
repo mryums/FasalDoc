@@ -198,8 +198,9 @@ export default function App() {
     if (state.screen !== 'analyzing' || diagnosisRan.current || !state.file) return
     diagnosisRan.current = true
     const file = state.file
+    const question = state.question
 
-    diagnoseImage(file)
+    diagnoseImage(file, question)
       .then((diagnosis) => dispatch({ type: 'diagnosis-success', diagnosis }))
       .catch((err: unknown) =>
         dispatch({ type: 'diagnosis-error', error: diagnoseErrorMessage(err) }),

@@ -61,9 +61,15 @@ async function parseBackendError(res: Response): Promise<ApiError> {
  * POST /diagnose — multipart upload, field name must be "image"
  * (backend/routes/diagnose.py :: image: UploadFile = File(...)).
  */
-export async function diagnoseImage(file: File): Promise<DiagnosisResponse> {
+export async function diagnoseImage(
+  file: File,
+  question?: string,
+): Promise<DiagnosisResponse> {
   const form = new FormData()
   form.append('image', file)
+  if (question && question.trim()) {
+    form.append('question', question.trim())
+  }
 
   let res: Response
   try {
