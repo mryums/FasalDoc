@@ -1,14 +1,4 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "backend/main.py",
-      "use": "@vercel/python",
-      "config": {
-        "entrypoint": "backend/main.py"
-      }
-    }
-  ],
   "routes": [
     {
       "src": "/(.*)",
