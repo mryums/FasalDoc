@@ -1,0 +1,1 @@
+"""FasalDoc API routes."""
