@@ -1,26 +1,21 @@
 """Offline tests for backend/services/gemini_provider.py.
 
 Every test injects a fake ``google.genai``-shaped client into
-GeminiDiagnosisProvider, so NOTHING here ever makes a live network/API call.
+GeminiDiagnosisProvider, so NOTHING here ever makes a live API call.
 """
 import json
 
 import pytest
 
-from backend.services.diagnosis_service import ImageInput
 from backend.services.gemini_provider import GeminiDiagnosisProvider
 
 
 class _FakeResponse:
-    """Mimics the small slice of google.genai's response object we use."""
-
     def __init__(self, text):
         self.text = text
 
 
 class _FakeModels:
-    """Mimics client.models.generate_content(...)."""
-
     def __init__(self, response=None, exc=None):
         self._response = response
         self._exc = exc
@@ -46,12 +41,10 @@ def _make_provider(response_text=None, exc=None):
     return GeminiDiagnosisProvider(client=fake_client), fake_client
 
 
-VALID_IMAGE = ImageInput(
-    filename="leaf.jpg",
-    content_type="image/jpeg",
-    data=b"fake-jpeg-bytes",
-    question="Why are the leaves turning yellow?",
-)
+FILENAME = "leaf.jpg"
+IMAGE_DATA = b"fake-jpeg-bytes"
+CONTENT_TYPE = "image/jpeg"
+QUESTION = "Why are the leaves turning yellow?"
 
 
 # --- Happy path --------------------------------------------------------------
@@ -66,10 +59,12 @@ def test_diagnose_returns_expected_contract_fields():
     }
     provider, _ = _make_provider(response_text=json.dumps(payload))
 
-    result = provider.diagnose(VALID_IMAGE)
+    result = provider.diagnose(
+        FILENAME, data=IMAGE_DATA, content_type=CONTENT_TYPE, question=QUESTION
+    )
 
     assert set(result.keys()) >= {"filename", "diagnosis", "confidence", "advice", "needs_expert"}
-    assert result["filename"] == "leaf.jpg"
+    assert result["filename"] == FILENAME
     assert result["diagnosis"] == "Early Blight"
     assert result["confidence"] == pytest.approx(0.82)
     assert result["advice"]
@@ -86,14 +81,15 @@ def test_diagnose_sends_image_and_question_together():
     }
     provider, fake_client = _make_provider(response_text=json.dumps(payload))
 
-    provider.diagnose(VALID_IMAGE)
+    provider.diagnose(
+        FILENAME, data=IMAGE_DATA, content_type=CONTENT_TYPE, question=QUESTION
+    )
 
     call = fake_client.models.last_call
     assert call is not None
     contents = call["contents"]
-    # First content item is the image part, second is the question-derived prompt.
     assert len(contents) == 2
-    assert VALID_IMAGE.question in contents[1]
+    assert QUESTION in contents[1]
 
 
 def test_diagnose_handles_markdown_fenced_json():
@@ -107,7 +103,7 @@ def test_diagnose_handles_markdown_fenced_json():
     fenced = "```json\n" + json.dumps(payload) + "\n```"
     provider, _ = _make_provider(response_text=fenced)
 
-    result = provider.diagnose(VALID_IMAGE)
+    result = provider.diagnose(FILENAME, data=IMAGE_DATA, content_type=CONTENT_TYPE, question=QUESTION)
     assert result["diagnosis"] == "Leaf Rust"
 
 
@@ -123,7 +119,7 @@ def test_diagnose_handles_non_plant_image():
     }
     provider, _ = _make_provider(response_text=json.dumps(payload))
 
-    result = provider.diagnose(VALID_IMAGE)
+    result = provider.diagnose(FILENAME, data=IMAGE_DATA, content_type=CONTENT_TYPE, question=QUESTION)
 
     assert result["needs_expert"] is True
     assert result["confidence"] == 0.0
@@ -133,8 +129,6 @@ def test_diagnose_handles_non_plant_image():
 # --- Low confidence enforcement ----------------------------------------------
 
 def test_diagnose_enforces_confidence_threshold_in_python():
-    # Model claims a diagnosis but with low confidence and needs_expert=False;
-    # our code must override needs_expert/advice regardless of what the model said.
     payload = {
         "is_plant_photo": True,
         "diagnosis": "Possible fungal infection",
@@ -144,7 +138,7 @@ def test_diagnose_enforces_confidence_threshold_in_python():
     }
     provider, _ = _make_provider(response_text=json.dumps(payload))
 
-    result = provider.diagnose(VALID_IMAGE)
+    result = provider.diagnose(FILENAME, data=IMAGE_DATA, content_type=CONTENT_TYPE, question=QUESTION)
 
     assert result["needs_expert"] is True
     assert "expert" in result["advice"].lower() or "extension" in result["advice"].lower()
@@ -155,7 +149,7 @@ def test_diagnose_enforces_confidence_threshold_in_python():
 def test_diagnose_handles_api_error_gracefully():
     provider, _ = _make_provider(exc=RuntimeError("network is down"))
 
-    result = provider.diagnose(VALID_IMAGE)
+    result = provider.diagnose(FILENAME, data=IMAGE_DATA, content_type=CONTENT_TYPE, question=QUESTION)
 
     assert result["diagnosis"] == "Unknown"
     assert result["confidence"] == 0.0
@@ -168,7 +162,7 @@ def test_diagnose_handles_api_error_gracefully():
 def test_diagnose_handles_malformed_json_response():
     provider, _ = _make_provider(response_text="not json at all, sorry!")
 
-    result = provider.diagnose(VALID_IMAGE)
+    result = provider.diagnose(FILENAME, data=IMAGE_DATA, content_type=CONTENT_TYPE, question=QUESTION)
 
     assert result["diagnosis"] == "Unknown"
     assert result["needs_expert"] is True
@@ -178,19 +172,18 @@ def test_diagnose_handles_malformed_json_response():
 def test_diagnose_handles_empty_response_text():
     provider, _ = _make_provider(response_text="")
 
-    result = provider.diagnose(VALID_IMAGE)
+    result = provider.diagnose(FILENAME, data=IMAGE_DATA, content_type=CONTENT_TYPE, question=QUESTION)
 
     assert result["diagnosis"] == "Unknown"
     assert result["needs_expert"] is True
 
 
 def test_diagnose_handles_missing_fields_in_valid_json():
-    # Valid JSON but missing several expected keys should not crash.
     provider, _ = _make_provider(response_text=json.dumps({"is_plant_photo": True}))
 
-    result = provider.diagnose(VALID_IMAGE)
+    result = provider.diagnose(FILENAME, data=IMAGE_DATA, content_type=CONTENT_TYPE, question=QUESTION)
 
-    assert result["filename"] == "leaf.jpg"
+    assert result["filename"] == FILENAME
     assert 0 <= result["confidence"] <= 1
     assert isinstance(result["needs_expert"], bool)
     assert result["advice"]
@@ -214,7 +207,9 @@ def test_placeholder_api_key_raises(monkeypatch):
 
 def test_answer_followup_returns_text():
     provider, _ = _make_provider(response_text="Water every two days after treatment.")
-    answer = provider.answer_followup("How often should I water?", context={"diagnosis": "Early Blight", "confidence": 0.8})
+    answer = provider.answer_followup(
+        "How often should I water?", context={"diagnosis": "Early Blight", "confidence": 0.8}
+    )
     assert isinstance(answer, str)
     assert answer.strip()
 
