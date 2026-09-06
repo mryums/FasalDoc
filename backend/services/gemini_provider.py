@@ -1,28 +1,4 @@
-"""gemini_provider.py
-===================
-Real AI-powered DiagnosisProvider backed by Google's Gemini 2.5 Flash
-(vision + text in a single multimodal call).
-
-This provider is second in the fallback chain used by
-``diagnosis_service._build_provider()``:
-
-    Qwen (Member 1)  ->  Gemini (this module)  ->  Mock (offline)
-
-It is only ever constructed when:
-    * ``DASHSCOPE_API_KEY`` (Qwen) is missing/placeholder, AND
-    * ``GEMINI_API_KEY`` looks like a real, non-placeholder key.
-
-If Gemini itself is unreachable/misconfigured, ``diagnosis_service`` catches
-the resulting exception and falls back to the offline mock, so the app never
-hard-crashes just because a cloud AI provider is having a bad day.
-
-Environment variables:
-    GEMINI_API_KEY   -> your Google AI Studio / Gemini API key (required)
-    GEMINI_MODEL     -> optional override, defaults to "gemini-3.6-flash"
-
-Install dependencies:
-    pip install google-genai
-"""
+"""Gemini-backed DiagnosisProvider for FasalDoc."""
 from __future__ import annotations
 
 import json
@@ -31,39 +7,27 @@ import os
 import re
 from typing import Any, Dict, Optional
 
-from backend.services.diagnosis_service import DiagnosisProvider, ImageInput
+from backend.services.diagnosis_service import DiagnosisProvider
 
 logger = logging.getLogger("fasaldoc.gemini_provider")
 
 DEFAULT_MODEL = "gemini-3.6-flash"
-
-# Below this confidence (0..1), we never show a specific diagnosis to the
-# farmer — we recommend a human expert instead. Mirrors the safety net used
-# by Member 1's Qwen pipeline (ai_pipeline.CONFIDENCE_THRESHOLD = 60/100).
 CONFIDENCE_THRESHOLD = 0.60
 
 FALLBACK_ADVICE = (
     "We could not confidently diagnose this from the photo and question "
     "provided. To avoid giving potentially wrong advice, please consult a "
-    "local agriculture expert or extension officer for an in-person "
-    "assessment."
+    "local agriculture expert or extension officer for an in-person assessment."
 )
 
 NOT_A_PLANT_ADVICE = (
     "This image does not appear to show a plant or crop. Please upload a "
-    "clear photo of the affected leaf, stem, or plant so we can help "
-    "diagnose the issue."
+    "clear photo of the affected leaf, stem, or plant so we can help diagnose the issue."
 )
 
-GEMINI_SYSTEM_PROMPT = """You are "FasalDoc", an agricultural vision-and-advisory \
-assistant that helps farmers diagnose crop health issues from a photo and an \
-optional question. You are NOT a certain diagnosis tool -- you combine what is \
-visually observable in the image with the farmer's question to give honest, \
-conservative guidance.
+GEMINI_SYSTEM_PROMPT = """You are "FasalDoc", an agricultural vision-and-advisory assistant that helps farmers diagnose crop health issues from a photo and an optional question. You are NOT a certain diagnosis tool -- you combine what is visually observable in the image with the farmer's question to give honest, conservative guidance.
 
-Respond with ONLY a JSON object (no extra text, no markdown code fences) with \
-exactly this structure:
-
+Respond with ONLY a JSON object (no extra text, no markdown code fences) with exactly this structure:
 {
   "is_plant_photo": true or false,
   "diagnosis": "short diagnosis label, or 'Unknown' if unclear",
@@ -73,30 +37,15 @@ exactly this structure:
 }
 
 Rules:
-- If the image does NOT show a plant/crop at all (e.g. a person, an animal, a \
-random object, a blank/corrupted image), set "is_plant_photo" to false, \
-"diagnosis" to "Unknown", "confidence" to 0.0, "needs_expert" to true, and \
-"advice" to a short note asking the farmer to upload a clear plant photo. Do \
-NOT invent crop symptoms for a non-plant photo.
-- Set "confidence" honestly: high (0.7-1.0) only when symptoms in the image \
-clearly match one specific diagnosis; medium (0.4-0.69) when partially clear; \
-low (0.0-0.39) when the photo is blurry, ambiguous, or symptoms don't match \
-anything specific.
-- Set "needs_expert" to true whenever confidence is below 0.6, or the case \
-looks severe, or you are not confident in a specific diagnosis.
-- Be conservative -- it is much better to admit uncertainty than to \
-confidently give wrong advice to a farmer who may act on it immediately.
-- Use the farmer's question (if provided) to focus the advice, but never let \
-it override what is actually visible in the image.
+- If the image does NOT show a plant/crop at all, set "is_plant_photo" to false, "diagnosis" to "Unknown", "confidence" to 0.0, "needs_expert" to true, and "advice" to a short note asking the farmer to upload a clear plant photo. Do NOT invent crop symptoms.
+- Set confidence honestly: high (0.7-1.0) only when symptoms clearly match one specific diagnosis; medium (0.4-0.69) when partially clear; low (0.0-0.39) when blurry or ambiguous.
+- Set needs_expert to true whenever confidence is below 0.6, the case looks severe, or you are not confident in a specific diagnosis.
+- Be conservative -- it is much better to admit uncertainty than to confidently give wrong advice.
+- Use the farmer's question to focus advice, but never let it override what is actually visible in the image.
 """
 
 
 def _extract_json(raw_text: Optional[str]) -> Optional[Dict[str, Any]]:
-    """Best-effort JSON extraction from a Gemini text response.
-
-    Mirrors ai_pipeline._extract_json's tolerance for markdown fences / extra
-    prose, since LLMs occasionally ignore "JSON only" instructions.
-    """
     if not raw_text:
         return None
     text = raw_text.strip()
@@ -118,7 +67,6 @@ def _extract_json(raw_text: Optional[str]) -> Optional[Dict[str, Any]]:
 
 
 def _guess_mime_type(content_type: Optional[str], filename: str) -> str:
-    """Pick a safe image mime type for the Gemini API."""
     allowed = {"image/jpeg", "image/png", "image/webp"}
     if content_type in allowed:
         return content_type
@@ -131,18 +79,9 @@ def _guess_mime_type(content_type: Optional[str], filename: str) -> str:
 
 
 class GeminiDiagnosisProvider(DiagnosisProvider):
-    """DiagnosisProvider backed by Gemini 2.5 Flash (vision + text)."""
+    """DiagnosisProvider backed by Gemini vision + text."""
 
     def __init__(self, client: Optional[Any] = None, model: Optional[str] = None):
-        """Create the provider.
-
-        Args:
-            client: Optional pre-built ``google.genai.Client``. Tests inject
-                a fake client here to avoid any live API calls. When omitted,
-                a real client is built from ``GEMINI_API_KEY``.
-            model: Optional model name override; defaults to
-                ``GEMINI_MODEL`` env var or ``gemini-3.6-flash``.
-        """
         self.model = model or os.getenv("GEMINI_MODEL") or DEFAULT_MODEL
         self._client = client if client is not None else self._build_client()
 
@@ -154,33 +93,30 @@ class GeminiDiagnosisProvider(DiagnosisProvider):
                 "GEMINI_API_KEY environment variable is not set. Get a key "
                 "from Google AI Studio and export it before running the app."
             )
-        # Imported lazily so the whole backend doesn't hard-depend on
-        # google-genai being installed unless Gemini is actually used.
         from google import genai  # type: ignore
-
         return genai.Client(api_key=api_key)
 
-    # -- DiagnosisProvider interface -----------------------------------
-
-    def diagnose(self, image: ImageInput) -> dict:
-        filename = image.filename
-        question_text = (image.question or "").strip()
-
+    def diagnose(
+        self,
+        filename: str,
+        data: bytes | None = None,
+        content_type: str | None = None,
+        question: str | None = None,
+    ) -> dict[str, Any]:
+        question_text = (question or "").strip()
         try:
             from google.genai import types  # type: ignore
 
-            mime_type = _guess_mime_type(image.content_type, filename)
+            mime_type = _guess_mime_type(content_type, filename)
             prompt_text = (
                 f"Farmer's question: {question_text}"
                 if question_text
-                else "The farmer did not provide a written question. "
-                "Diagnose the crop issue from the photo alone."
+                else "The farmer did not provide a written question. Diagnose the crop issue from the photo alone."
             )
-
             response = self._client.models.generate_content(
                 model=self.model,
                 contents=[
-                    types.Part.from_bytes(data=image.data, mime_type=mime_type),
+                    types.Part.from_bytes(data=data or b"", mime_type=mime_type),
                     prompt_text,
                 ],
                 config=types.GenerateContentConfig(
@@ -188,7 +124,7 @@ class GeminiDiagnosisProvider(DiagnosisProvider):
                     temperature=0.2,
                 ),
             )
-        except Exception as exc:  # noqa: BLE001 - network/SDK/auth errors, etc.
+        except Exception as exc:  # noqa: BLE001
             logger.exception("Gemini diagnose() call failed")
             return {
                 "filename": filename,
@@ -201,9 +137,7 @@ class GeminiDiagnosisProvider(DiagnosisProvider):
 
         raw_text = getattr(response, "text", None)
         parsed = _extract_json(raw_text)
-
         if parsed is None:
-            logger.error("Gemini diagnose(): could not parse response: %s", raw_text)
             return {
                 "filename": filename,
                 "diagnosis": "Unknown",
@@ -213,8 +147,6 @@ class GeminiDiagnosisProvider(DiagnosisProvider):
                 "error": "Could not parse Gemini response.",
             }
 
-        # Non-plant photo: short-circuit with the dedicated message, ignoring
-        # whatever else the model may have filled in.
         if parsed.get("is_plant_photo") is False:
             return {
                 "filename": filename,
@@ -233,9 +165,6 @@ class GeminiDiagnosisProvider(DiagnosisProvider):
         diagnosis = parsed.get("diagnosis") or "Unknown"
         advice = parsed.get("advice") or ""
         needs_expert = bool(parsed.get("needs_expert", False))
-
-        # Python enforces the safety net -- never trust the model to police
-        # its own threshold, same principle as ai_pipeline.CONFIDENCE_THRESHOLD.
         if confidence < CONFIDENCE_THRESHOLD:
             needs_expert = True
             advice = FALLBACK_ADVICE
@@ -248,6 +177,23 @@ class GeminiDiagnosisProvider(DiagnosisProvider):
             "needs_expert": needs_expert,
         }
 
+    def answer(self, question: str) -> str:
+        prompt = (
+            "You are FasalDoc, an agricultural advisor answering a farmer's follow-up question. "
+            "Reply in plain text (no JSON), 2-4 sentences, clear and actionable.\n\n"
+            f"Follow-up question: {question}"
+        )
+        try:
+            response = self._client.models.generate_content(
+                model=self.model,
+                contents=[prompt],
+            )
+        except Exception:  # noqa: BLE001
+            logger.exception("Gemini answer() call failed")
+            return FALLBACK_ADVICE
+        return (getattr(response, "text", None) or "").strip() or FALLBACK_ADVICE
+
+    # Backward-compatible helper retained for existing Gemini tests/callers.
     def answer_followup(self, question: str, context: Optional[dict] = None) -> str:
         context_note = ""
         if context and context.get("diagnosis"):
@@ -256,25 +202,17 @@ class GeminiDiagnosisProvider(DiagnosisProvider):
                 f"(confidence {context.get('confidence')}). "
             )
         prompt = (
-            "You are FasalDoc, an agricultural advisor answering a farmer's "
-            "follow-up question. Reply in plain text (no JSON), 2-4 sentences, "
-            "clear and actionable.\n\n"
+            "You are FasalDoc, an agricultural advisor answering a farmer's follow-up question. "
+            "Reply in plain text (no JSON), 2-4 sentences, clear and actionable.\n\n"
             f"{context_note}Follow-up question: {question}"
         )
-
         try:
-            response = self._client.models.generate_content(
-                model=self.model,
-                contents=[prompt],
-            )
+            response = self._client.models.generate_content(model=self.model, contents=[prompt])
         except Exception:  # noqa: BLE001
             logger.exception("Gemini answer_followup() call failed")
             return FALLBACK_ADVICE
-
-        text = getattr(response, "text", None)
-        return (text or "").strip() or FALLBACK_ADVICE
+        return (getattr(response, "text", None) or "").strip() or FALLBACK_ADVICE
 
 
 def create_provider() -> DiagnosisProvider:
-    """Factory function expected by diagnosis_service._build_provider()."""
     return GeminiDiagnosisProvider()
