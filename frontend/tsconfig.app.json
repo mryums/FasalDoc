@@ -1,60 +1,27 @@
-import { useLanguage } from '../i18n/LanguageContext'
-import { ImageUploader } from '../components/ImageUploader'
-import { QuestionInput } from '../components/QuestionInput'
-import { Button } from '../components/Button'
-import { ErrorMessage } from '../components/ErrorMessage'
+{
+  "compilerOptions": {
+    "composite": true,
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
 
-interface UploadScreenProps {
-  file: File | null
-  previewUrl: string | null
-  question: string
-  error: string | null
-  onPickFile: (file: File) => void
-  onRemoveFile: () => void
-  onQuestionChange: (value: string) => void
-  onDiagnose: () => void
-}
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
 
-export function UploadScreen({
-  file,
-  previewUrl,
-  question,
-  error,
-  onPickFile,
-  onRemoveFile,
-  onQuestionChange,
-  onDiagnose,
-}: UploadScreenProps) {
-  const { t } = useLanguage()
-
-  return (
-    <div className="screen upload-screen">
-      <h1 className="screen__title">{t.upload.title}</h1>
-      <p className="screen__subtitle">{t.upload.subtitle}</p>
-
-      <ImageUploader
-        file={file}
-        previewUrl={previewUrl}
-        onSelect={onPickFile}
-        onRemove={onRemoveFile}
-      />
-
-      <div className="field">
-        <label className="field__label" htmlFor="farmer-question">
-          {t.upload.questionLabel}
-        </label>
-        <QuestionInput
-          id="farmer-question"
-          value={question}
-          onChange={onQuestionChange}
-        />
-      </div>
-
-      {error && <ErrorMessage message={error} />}
-
-      <Button className="upload-screen__submit" onClick={onDiagnose}>
-        {t.upload.diagnose}
-      </Button>
-    </div>
-  )
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
 }

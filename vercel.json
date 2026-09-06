@@ -1,14 +1,45 @@
 {
   "builds": [
     {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    },
+    {
       "src": "backend/main.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
-      "src": "/(.*)",
+      "src": "/api/(.*)",
       "dest": "backend/main.py"
+    },
+    {
+      "src": "/diagnose",
+      "dest": "backend/main.py"
+    },
+    {
+      "src": "/ask-followup",
+      "dest": "backend/main.py"
+    },
+    {
+      "src": "/health",
+      "dest": "backend/main.py"
+    },
+    {
+      "src": "/voice/(.*)",
+      "dest": "backend/main.py"
+    },
+    {
+      "src": "/assets/(.*)",
+      "dest": "frontend/dist/assets/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "frontend/dist/$1"
     }
   ]
 }

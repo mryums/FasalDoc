@@ -31,13 +31,6 @@ export function HomeScreen({ onStart }: HomeScreenProps) {
           </Button>
           <p className="hero__langs">{t.home.languagesNote}</p>
         </div>
-        <img
-          src="/images/hero.png"
-          alt=""
-          className="hero__image"
-          width={768}
-          height={512}
-        />
       </section>
 
       <section className="steps" aria-label="How FasalDoc works">
