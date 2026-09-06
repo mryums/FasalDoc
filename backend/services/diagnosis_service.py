@@ -4,19 +4,24 @@ This module defines the contract between the FastAPI routes and the AI
 backend. Routes call the module-level helpers (:func:`run_diagnosis` and
 :func:`answer_followup`); they never hardcode AI logic.
 
-Plugging in the real AI (Member 1 — Qwen / Alibaba Cloud DashScope):
-    1. Create ``backend/services/qwen_provider.py`` exposing a factory::
+Provider priority: Qwen (Member 1) -> Gemini -> offline Mock.
+
+Plugging in a real AI provider:
+    1. Create a ``backend/services/<name>_provider.py`` exposing a factory::
 
            def create_provider() -> "DiagnosisProvider":
                ...
 
        whose object implements the :class:`DiagnosisProvider` protocol below.
-    2. Set ``DASHSCOPE_API_KEY`` (and any other config) in the environment.
+    2. Set the provider's API key in the environment:
+           - ``DASHSCOPE_API_KEY``  -> Qwen / Alibaba Cloud (tried first)
+           - ``GEMINI_API_KEY``     -> Gemini 2.5 Flash (tried second)
 
-Nothing in the routes needs to change. If the credentials are missing or the
-real provider cannot be built, the service transparently falls back to the
-offline :class:`MockDiagnosisProvider`, so the app keeps working without
-Alibaba Cloud access.
+Nothing in the routes needs to change. If credentials for a provider are
+missing, or that provider cannot be built/queried, the service transparently
+falls back to the next one in line, ending with the offline
+:class:`MockDiagnosisProvider`, so the app keeps working without any cloud
+AI access.
 """
 from __future__ import annotations
 
@@ -81,8 +86,13 @@ def _looks_configured(key: str) -> bool:
 def _build_provider() -> DiagnosisProvider:
     """Select the active provider once, at first use.
 
-    Prefers Member 1's real provider when credentials exist; otherwise (or on
-    any construction error) safely falls back to the offline mock.
+    Provider priority: Qwen (Member 1) -> Gemini -> offline Mock.
+
+    Prefers Member 1's real provider when credentials exist; otherwise, if a
+    real Gemini API key is configured, uses Gemini 2.5 Flash (vision + text)
+    as the AI provider. If neither is configured, or construction of either
+    fails for any reason, safely falls back to the offline mock so the app
+    keeps working without any cloud AI access.
     """
     if _looks_configured(os.getenv("DASHSCOPE_API_KEY", "")):
         try:
@@ -91,8 +101,19 @@ def _build_provider() -> DiagnosisProvider:
             return create_provider()
         except Exception as exc:  # pragma: no cover - depends on Member 1's module
             logger.warning(
-                "Qwen provider unavailable (%s); using offline mock fallback.", exc
+                "Qwen provider unavailable (%s); trying Gemini/mock fallback.", exc
             )
+
+    if _looks_configured(os.getenv("GEMINI_API_KEY", "")):
+        try:
+            from backend.services.gemini_provider import create_provider  # type: ignore
+
+            return create_provider()
+        except Exception as exc:
+            logger.warning(
+                "Gemini provider unavailable (%s); using offline mock fallback.", exc
+            )
+
     return MockDiagnosisProvider()
 
 

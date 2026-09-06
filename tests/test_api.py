@@ -127,6 +127,37 @@ def test_service_selects_qwen_provider_when_configured(monkeypatch):
     diagnosis_service.reset_provider()
 
 
+def test_service_selects_gemini_provider_when_qwen_absent_but_gemini_configured(monkeypatch):
+    # No live network call happens here: constructing a genai.Client is a
+    # local operation, and no diagnose()/generate_content() call is made.
+    monkeypatch.delenv("DASHSCOPE_API_KEY", raising=False)
+    monkeypatch.setenv("GEMINI_API_KEY", "test-gemini-key")
+    diagnosis_service.reset_provider()
+    provider = diagnosis_service.get_provider()
+    from backend.services.gemini_provider import GeminiDiagnosisProvider
+    assert isinstance(provider, GeminiDiagnosisProvider)
+    diagnosis_service.reset_provider()
+
+
+def test_service_falls_back_to_mock_when_gemini_key_is_placeholder(monkeypatch):
+    monkeypatch.delenv("DASHSCOPE_API_KEY", raising=False)
+    monkeypatch.setenv("GEMINI_API_KEY", "your_key_here")
+    diagnosis_service.reset_provider()
+    provider = diagnosis_service.get_provider()
+    assert isinstance(provider, diagnosis_service.MockDiagnosisProvider)
+    diagnosis_service.reset_provider()
+
+
+def test_qwen_still_takes_priority_over_gemini_when_both_configured(monkeypatch):
+    monkeypatch.setenv("DASHSCOPE_API_KEY", "sk-test-valid-key")
+    monkeypatch.setenv("GEMINI_API_KEY", "test-gemini-key")
+    diagnosis_service.reset_provider()
+    provider = diagnosis_service.get_provider()
+    from backend.services.qwen_provider import QwenDiagnosisProvider
+    assert isinstance(provider, QwenDiagnosisProvider)
+    diagnosis_service.reset_provider()
+
+
 
 def test_service_run_diagnosis_matches_model():
     result = diagnosis_service.run_diagnosis("x.png", data=b"abc", content_type="image/png")
