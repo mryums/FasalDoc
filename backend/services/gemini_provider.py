@@ -102,7 +102,7 @@ class GeminiDiagnosisProvider(DiagnosisProvider):
             response = self._client.models.generate_content(
                 model=self.model,
                 contents=[types.Part.from_bytes(data=data or b"", mime_type=mime_type), prompt_text],
-                config=types.GenerateContentConfig(system_instruction=GEMINI_SYSTEM_PROMPT, temperature=0.2),
+                config=types.GenerateContentConfig(system_instruction=GEMINI_SYSTEM_PROMPT),
             )
         except Exception as exc:
             logger.exception("Gemini diagnose() call failed")
