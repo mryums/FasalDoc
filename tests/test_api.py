@@ -4,6 +4,7 @@ Everything here uses FastAPI's TestClient / direct service calls and NEVER
 makes an external or AI/cloud request.
 """
 from fastapi.testclient import TestClient
+import pytest
 
 from backend.main import app
 from backend.services import diagnosis_service
@@ -11,6 +12,16 @@ from backend.services import diagnosis_service
 client = TestClient(app)
 
 VALID_IMAGE = ("leaf.jpg", b"fake-jpeg-bytes", "image/jpeg")
+
+
+@pytest.fixture(autouse=True)
+def _force_offline_mock(monkeypatch):
+    """Keep this suite hermetic even when a real .env with API keys exists."""
+    monkeypatch.delenv("DASHSCOPE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    diagnosis_service.reset_provider()
+    yield
+    diagnosis_service.reset_provider()
 
 
 # --- Health -----------------------------------------------------------------
@@ -55,7 +66,7 @@ def test_diagnose_valid_image_returns_contract():
     response = client.post("/diagnose", files={"image": VALID_IMAGE})
     assert response.status_code == 200
     data = response.json()
-    assert set(data) == {"filename", "diagnosis", "confidence", "advice", "needs_expert"}
+    assert set(data) == {"filename", "diagnosis", "confidence", "advice", "needs_expert", "error"}
     assert data["filename"] == "leaf.jpg"
     assert 0 <= data["confidence"] <= 1
     assert isinstance(data["needs_expert"], bool)

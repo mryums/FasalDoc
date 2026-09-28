@@ -4,6 +4,8 @@ Field names and types here are mirrored by the frontend
 (frontend/src/types/api.ts) — do NOT rename or reshape them. Descriptions and
 examples are documentation-only and safe to extend.
 """
+from typing import Optional
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -28,6 +30,11 @@ class DiagnosisResponse(BaseModel):
     advice: str = Field(..., description="Recommended next action for the farmer.")
     needs_expert: bool = Field(
         ..., description="Whether the case should be escalated to a human expert."
+    )
+    # Present only when the AI provider failed or its response could not be
+    # parsed — lets callers distinguish a real diagnosis from a fallback text.
+    error: Optional[str] = Field(
+        None, description="Provider error detail; None means the AI answered normally."
     )
 
 

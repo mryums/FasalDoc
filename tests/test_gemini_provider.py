@@ -220,7 +220,8 @@ def test_answer_followup_returns_text():
 
 
 def test_answer_followup_handles_api_error():
+    # Provider errors must NOT be disguised as an AI answer — the route
+    # converts this into a clean 500 so the frontend shows a real error.
     provider, _ = _make_provider(exc=RuntimeError("timeout"))
-    answer = provider.answer_followup("How often should I water?")
-    assert isinstance(answer, str)
-    assert answer.strip()
+    with pytest.raises(RuntimeError, match="Gemini follow-up failed"):
+        provider.answer_followup("How often should I water?")

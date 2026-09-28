@@ -11,6 +11,8 @@ export interface DiagnosisResponse {
   confidence: number
   advice: string
   needs_expert: boolean
+  /** Non-null only when the AI provider failed (fallback response in use) */
+  error?: string | null
 }
 
 /** Request body of POST /ask-followup (backend/models.py :: FollowupRequest) */

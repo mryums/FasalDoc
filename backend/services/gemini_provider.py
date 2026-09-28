@@ -267,9 +267,11 @@ class GeminiDiagnosisProvider(DiagnosisProvider):
                 model=self.model,
                 contents=[prompt],
             )
-        except Exception:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             logger.exception("Gemini answer_followup() call failed")
-            return FALLBACK_ADVICE
+            # Do NOT disguise an outage as an answer: re-raise so the route
+            # returns a clean 500 instead of fallback text that looks like AI.
+            raise RuntimeError(f"Gemini follow-up failed: {exc}") from exc
 
         text = getattr(response, "text", None)
         return (text or "").strip() or FALLBACK_ADVICE

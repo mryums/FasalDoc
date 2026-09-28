@@ -25,7 +25,10 @@ export function ResultScreen({
 }: ResultScreenProps) {
   const { t } = useLanguage()
 
-  if (error || !diagnosis) {
+  // A provider-level error (e.g. Gemini quota outage) must NOT render as a
+  // normal "Unknown" diagnosis — show the clean retry/error screen instead.
+  // The raw backend error string is intentionally never displayed.
+  if (error || !diagnosis || diagnosis.error) {
     return (
       <div className="screen result">
         <h1 className="screen__title">{t.result.title}</h1>
