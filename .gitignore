@@ -7,3 +7,18 @@ node_modules/
 frontend/dist/
 data/plantvillage_raw/
 .DS_Store
+# Ignore data and images
+data/
+*.JPG
+*.jpg
+*.png
+
+# Ignore dependencies
+**/node_modules/
+# Ignore entire dataset folder
+data/plant_disease_dataset/
+
+# Ya phir pure data folder ko ignore karein
+data/
+# Local Python ML environment
+ml-env/
