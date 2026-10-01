@@ -654,6 +654,64 @@ def test_pure_roman_advice_in_ur_is_never_returned():
     assert urdu_count(result["advice"]) >= 8
 
 
+# ---------------------------------------------------------------------------
+# 18  English must be ENGLISH, not Roman Urdu. Both are pure Latin script, so
+#     the old script-only `en` rule accepted Roman-Urdu advice verbatim; the
+#     word-level Roman-Urdu detector is what closes that gap.
+# ---------------------------------------------------------------------------
+
+ENGLISH_REWRITE = (
+    "Remove the affected leaves immediately and improve airflow around the "
+    "plant so the foliage dries quickly."
+)
+
+
+def test_en_rule_rejects_roman_urdu_but_keeps_english():
+    # Roman Urdu is Latin-only, so the pure script check used to pass it.
+    assert gp._looks_like_roman_urdu(PURE_ROMAN_ADVICE)
+    assert not gp._prose_matches_language(PURE_ROMAN_ADVICE, "en")
+    # Genuine English (incl. a standard disease/chemical name) stays valid.
+    assert not gp._looks_like_roman_urdu(ENGLISH_REWRITE)
+    assert gp._prose_matches_language(ENGLISH_REWRITE, "en")
+    assert gp._prose_matches_language(
+        "Apply Mancozeb after confirming the dose with a local expert.", "en"
+    )
+
+
+def test_roman_advice_in_en_is_rewritten_to_english():
+    """Vision drifts to Roman Urdu for an English request; the gate must
+    reject it and return the English rewrite, never the Roman original."""
+    provider, _ = _provider(
+        _vision_json("Tomato Early Blight", PURE_ROMAN_ADVICE),
+        ENGLISH_REWRITE,  # the English rewrite answer
+    )
+
+    result = provider.diagnose(_image("en"))
+
+    assert result["advice"] == ENGLISH_REWRITE
+    assert PURE_ROMAN_ADVICE not in result["advice"]
+    assert gp._prose_matches_language(result["advice"], "en")
+    assert not gp._looks_like_roman_urdu(result["advice"])
+    assert urdu_count(result["advice"]) == 0
+
+
+def test_en_never_ships_roman_urdu_even_when_every_rewrite_stays_roman():
+    """Stubborn Roman output through rewrite + retry must collapse to the
+    validated English static fallback — the invalid original is unreachable."""
+    provider, _ = _provider(
+        _vision_json("Tomato Early Blight", PURE_ROMAN_ADVICE),
+        PURE_ROMAN_ADVICE,  # rewrite attempt: still Roman
+        PURE_ROMAN_ADVICE,  # stronger retry: still Roman
+    )
+
+    result = provider.diagnose(_image("en"))
+
+    assert PURE_ROMAN_ADVICE not in result["advice"]
+    assert gp._prose_matches_language(result["advice"], "en")
+    assert not gp._looks_like_roman_urdu(result["advice"])
+    assert urdu_count(result["advice"]) == 0
+
+
 def test_roman_rewrite_recovers_when_model_complies():
     provider, client = _provider(
         _vision_json("Tomato Early Blight", MIXED_ADVICE, localized=URDU_NAME),
@@ -775,3 +833,227 @@ def test_confidence_fields_stay_separate_in_the_contract():
     assert isinstance(result["confidence"], float)
     assert "یقین کی سطح" not in result["advice"]
     assert not any(v in result["advice"] for v in ("confidence", "Confidence"))
+
+
+# ---------------------------------------------------------------------------
+# 16  Localized DIAGNOSIS-LABEL validation must reject every non-Urdu script.
+#     Reproduced live with language=ur:
+#         diagnosis_localized: "ٹमेटو یلو লিफ ಕরल وाइرس"
+#     Gemini spelled "Tomato Yellow Leaf Curl Virus" with lookalike letters
+#     from several Indic scripts at once. The old rule only screened for
+#     Devanagari, so a Bengali/Kannada/Telugu/… mix carrying enough real Urdu
+#     characters was certified as a valid Urdu label.
+# ---------------------------------------------------------------------------
+
+# Verbatim live leak (Devanagari + Bengali + Kannada inside an Urdu frame).
+MIXED_TYLCV_LABEL = "ٹमেটو یلو লিফ ಕर्ल وाइرس"
+# Same failure mode WITHOUT any Devanagari — this is the shape the old
+# Devanagari-only screen could not see (11 genuine Urdu characters, so the
+# Urdu minimum and the Latin-dominance rule both pass it).
+MIXED_NO_DEVANAGARI_LABEL = "ٹماٹر লিফ ಕರ್ಲ ವೈರಸ್"
+
+# One foreign-script word pasted into an otherwise-correct Urdu label.
+FOREIGN_SCRIPT_WORDS = [
+    ("Bengali", "লিফ"),
+    ("Devanagari", "पति"),
+    ("Gurmukhi", "ਪਤੀ"),
+    ("Gujarati", "પતી"),
+    ("Oriya", "ପତ୍ର"),
+    ("Tamil", "இலை"),
+    ("Telugu", "ఆకు"),
+    ("Kannada", "ಕರ್ಲ"),
+    ("Malayalam", "ഇല"),
+    ("Sinhala", "පත"),
+]
+
+
+def test_live_mixed_script_label_is_rejected():
+    assert gp._localized_name_matches(MIXED_TYLCV_LABEL, "ur") is False
+
+
+def test_mixed_label_without_devanagari_is_rejected():
+    """The exact hole: no Devanagari at all, plenty of Urdu characters."""
+    assert urdu_count(MIXED_NO_DEVANAGARI_LABEL) >= 2
+    assert not re.search(r"[\u0900-\u097F]", MIXED_NO_DEVANAGARI_LABEL)
+    assert gp._localized_name_matches(MIXED_NO_DEVANAGARI_LABEL, "ur") is False
+
+
+@pytest.mark.parametrize("script,word", FOREIGN_SCRIPT_WORDS)
+def test_every_non_urdu_script_mix_is_rejected_in_ur(script, word):
+    label = f"ٹماٹر {word} وائرس"
+    assert gp._localized_name_matches(label, "ur") is False, script
+
+
+def test_genuine_urdu_labels_stay_valid():
+    assert gp._localized_name_matches("ٹماٹر زرد پتی کرل وائرس", "ur") is True
+    assert gp._localized_name_matches(URDU_NAME, "ur") is True
+
+
+def test_english_disease_name_inside_an_urdu_label_is_not_over_restricted():
+    """Standard English/chemical names are allowed inside Urdu labels, and
+    acronyms too — only a THIRD SCRIPT is a problem."""
+    assert gp._localized_name_matches("ٹماٹر میں Early Blight ہے", "ur") is True
+    assert gp._localized_name_matches("ٹماٹر TYLCV وائرس", "ur") is True
+
+
+@pytest.mark.parametrize("language", ["rom", "en"])
+def test_latin_only_modes_reject_every_non_latin_script(language):
+    """rom accepts Latin-only labels; en never needs a localized label at all.
+    Both must reject every other script, whichever word it appears in."""
+    assert gp._localized_name_matches(ROM_NAME, "rom") is True
+    assert gp._localized_name_matches(ROM_NAME, "en") is False
+    for _script, word in FOREIGN_SCRIPT_WORDS:
+        assert gp._localized_name_matches(f"Tamatar {word} Virus", language) is False
+    assert gp._localized_name_matches("ٹماٹر وائرس", language) is False
+
+
+def test_mixed_script_label_never_reaches_the_response():
+    """End-to-end: Gemini shipping the leaked label must NOT surface it — the
+    final gate either backfills the KB Urdu name or clears the field so the
+    frontend's own localization chain takes over."""
+    provider, _ = _provider(
+        _vision_json(
+            "Tomato Yellow Leaf Curl Virus",
+            URDU_ADVICE,
+            localized=MIXED_TYLCV_LABEL,
+        )
+    )
+
+    result = provider.diagnose(_image("ur"))
+
+    label = result["diagnosis_localized"]
+    assert label != MIXED_TYLCV_LABEL
+    assert label == "" or gp._localized_name_matches(label, "ur")
+    assert result["diagnosis"] == "Tomato Yellow Leaf Curl Virus"  # KB key intact
+
+
+# ---------------------------------------------------------------------------
+# 17  Advice prose: the SAME character-level allowlist as the labels.
+#     `_prose_matches_language("ur")` used to screen only for Devanagari, so
+#     Urdu advice polluted with Bengali/Kannada/Telugu/Cyrillic/… lookalikes
+#     passed as long as it held 8+ Urdu characters. Requirement: `language=ur`
+#     advice is proper Urdu script, with only legitimate Latin disease/chemical
+#     names mixed in.
+# ---------------------------------------------------------------------------
+
+CLEAN_URDU_ADVICE = (
+    "متاثرہ پتوں کو فوری طور پر ہٹا کر تلف کریں اور پودوں کے درمیان ہوا کی "
+    "آمد و رفت بہتر بنائیں۔"
+)
+
+# Urdu prose with ONE word written in another script (each keeps 8+ Urdu
+# characters, so the old rule could not see them).
+FOREIGN_SCRIPT_ADVICE = [
+    ("Bengali", "متاثرہ পতوں को فوری طور پر ہٹا کر تلف کریں اور پودوں کے درمیان ہوا بہتر رکھیں۔"),
+    ("Devanagari", "متाثرہ پتوں کو فوری طور پر ہٹا کر تلف करें اور پودوں کے درمیان ہوا بہتر رکھیں۔"),
+    ("Gurmukhi", "متاثرہ ਪਤوں کو فوری طور پر ہٹا کر تلف کریں اور پودوں کے درمیان ہوا بہتر رکھیں۔"),
+    ("Gujarati", "متાથેਰہ پتوں کو فوری طور پر ہٹا کر تلف کریں اور پودوں کے درمیان ہوا بہتر رکھیں۔"),
+    ("Oriya", "متାଥେରহ পتوں को فوری طور پر हटा कर تلف کریں اور پودوں के درमियान हوا बेহतर ਰੱਖିଁ।"),
+    ("Tamil", "மதா்ہ பதோன کو فوری طور پر ہٹا کر تلف کریں اور پودوں کے درمیان ہوا بہتر رکھیں۔"),
+    ("Telugu", "మతాథేరह పతోన کو فوری طور پر ہٹا کر تلف کریں اور پودوں کے درمیان ہوا بہتر رکھیں۔"),
+    ("Kannada", "متಾಥೇರಹ ಪತೋನ को فوری طور पर हटā कर तલफ़ क্রिं और पودوں के दरमियान हवā बेहतर रkھيं।"),
+    ("Malayalam", "മതാഥേരഹ പതോന کو فوری طور پر ہٹا کر تلف کریں اور پودوں کے درمیان ہوا بہتر رکھیں۔"),
+    ("Sinhala", "මතාඨේරහ පතෝන को فوری طور पर हटा कर تلف کریں اور پودوں کے درمیان ہوا بہتر رکھیں۔"),
+    ("CJK", "متاثرہ 病叶 को فوری طور पर हटा कर تلف کریں اور پودوں के درमियान हوا बेहतर রাখيं।"),
+    ("Cyrillic", "метاثرہ پتوں کو فوری طور पर हटा कर تлф़ کریं और पौदोں के दरमियान हवā बेहतर रkھيं।"),
+]
+
+
+def test_valid_urdu_advice_is_accepted():
+    assert gp._prose_matches_language(CLEAN_URDU_ADVICE, "ur") is True
+
+
+def test_urdu_advice_with_english_disease_or_chemical_names_is_accepted():
+    """Legitimate technical names stay allowed — the allowlist permits Latin."""
+    with_disease = (
+        "یہ ٹماٹر میں Early Blight کی بیماری ہے، متاثرہ پتے ہٹا دیں اور باقی "
+        "پودوں پر مناسب فیصلہ کریں۔"
+    )
+    with_chemical = (
+        "Mancozeb 75% WP کو دو ہفتے کے وقفے سے چھڑکائیں اور پودوں کے درمیان "
+        "ہوا کی آمد و رفت کو بہتر بنائیں۔"
+    )
+    assert gp._prose_matches_language(with_disease, "ur") is True
+    assert gp._prose_matches_language(with_chemical, "ur") is True
+
+
+def test_urdu_advice_with_digits_and_punctuation_is_accepted():
+    """Digits, symbols and Latin/Urdu punctuation are script-neutral."""
+    text = (
+        "زائد نمی سے بچنے کے لیے 2 ہفتے کے وقفے سے 0.5٪ محلول (75% WP) — "
+        "چھڑکاو جاری رکھیں؛ پتوں کی نگرانی کرتے رہیں۔"
+    )
+    assert gp._prose_matches_language(text, "ur") is True
+
+
+@pytest.mark.parametrize("script,text", FOREIGN_SCRIPT_ADVICE)
+def test_foreign_script_in_urdu_advice_is_rejected(script, text):
+    assert urdu_count(text) >= 8, f"{script} fixture must keep the old rule fooled"
+    assert gp._prose_matches_language(text, "ur") is False, script
+
+
+def test_roman_urdu_and_english_advice_stay_rejected():
+    """The pre-existing rejections are not weakened by the new allowlist."""
+    assert gp._prose_matches_language(PURE_ROMAN_ADVICE, "ur") is False
+    assert gp._prose_matches_language(ROM_ADVICE, "ur") is False
+    assert (
+        gp._prose_matches_language(
+            "Remove affected leaves immediately and improve air circulation "
+            "between the plants to reduce humidity around the canopy.", "ur"
+        )
+        is False
+    )
+    # ...and each mode still accepts its own script.
+    assert gp._prose_matches_language(ROM_ADVICE, "rom") is True
+    assert gp._prose_matches_language(
+        "Remove affected leaves immediately and improve air circulation.", "en"
+    ) is True
+
+
+def test_latin_only_modes_reject_foreign_script_prose():
+    polluted = "Mutaasira पतton ko foran hata dein aur paudon ke darmiyan hawa behtar banayein."
+    assert gp._prose_matches_language(polluted, "rom") is False
+    assert gp._prose_matches_language(polluted, "en") is False
+
+
+def test_foreign_script_advice_never_ships_from_diagnose():
+    """End-to-end: Kannada-polluted Urdu advice from Gemini must be replaced by
+    the deterministic chain (restate -> KB -> static), never returned as-is."""
+    polluted = next(text for name, text in FOREIGN_SCRIPT_ADVICE if name == "Kannada")
+    provider, _ = _provider(
+        _vision_json("Tomato Early Blight", polluted, localized=URDU_NAME)
+    )
+
+    result = provider.diagnose(_image("ur"))
+
+    advice = result["advice"]
+    assert polluted not in advice
+    assert gp._prose_matches_language(advice, "ur") is True
+    assert gp._has_foreign_script_letters(advice, urdu_allowed=True) is False
+
+
+def test_clean_restate_of_polluted_advice_is_used_when_it_complies():
+    """The chain still prefers the rewritten advice over the local fallback."""
+    polluted = next(text for name, text in FOREIGN_SCRIPT_ADVICE if name == "Bengali")
+    provider, client = _provider(
+        _vision_json("Tomato Early Blight", polluted, localized=URDU_NAME),
+        CLEAN_URDU_ADVICE,  # the stronger rewrite instruction complies
+    )
+
+    result = provider.diagnose(_image("ur"))
+
+    assert result["advice"] == CLEAN_URDU_ADVICE
+    assert len(client.models.calls) == 2
+
+
+def test_kb_fallback_skips_a_foreign_script_line_but_keeps_the_entry():
+    """data/knowledge_base.json ships at least one Urdu line typed with
+    Cyrillic lookalikes. The RAG data is never rewritten — the dirty line is
+    skipped so the diagnosis-specific fallback tier survives for that disease."""
+    provider, _ = _provider(_vision_json("Tomato Septoria Leaf Spot", URDU_ADVICE))
+
+    text = provider._kb_localized_advice("Tomato Septoria Leaf Spot", "ur")
+
+    assert text
+    assert "спорے" not in text  # the Cyrillic-typed tip was filtered out
+    assert gp._prose_matches_language(text, "ur") is True

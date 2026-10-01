@@ -19,6 +19,15 @@ hard-crashes just because a cloud AI provider is having a bad day.
 Environment variables:
     GEMINI_API_KEY   -> your Google AI Studio / Gemini API key (required)
     GEMINI_MODEL     -> optional override, defaults to "gemini-3.6-flash"
+    GEMINI_FALLBACK_MODELS -> optional comma-separated replacement for the
+                             transient-failure tail (FALLBACK_MODELS). The
+                             configured primary model is always tried first.
+
+Transient model failures (429/RESOURCE_EXHAUSTED, 503/UNAVAILABLE, timeouts,
+temporary network errors) fail over across that chain — one attempt per
+model, never a retry loop — for BOTH the vision calls and the text-only
+RAG/advice calls. Authentication/invalid-request errors are NOT failed over;
+they keep the existing safe error handling.
 
 Install dependencies:
     pip install google-genai
@@ -31,11 +40,146 @@ import os
 import re
 from typing import Any, Dict, List, Optional
 
+from backend.services import ml_classifier
 from backend.services.diagnosis_service import DiagnosisProvider, ImageInput
 
 logger = logging.getLogger("fasaldoc.gemini_provider")
 
 DEFAULT_MODEL = "gemini-3.6-flash"
+
+# --- Resilient model failover -------------------------------------------
+# Gemini availability/quota is granted PER MODEL, so a 429/503 on the
+# configured model usually succeeds against a sibling model. The chain
+# below is tried in order, ONE attempt per model (never a retry loop), and
+# only for transient provider failures — see _is_transient_error().
+FALLBACK_MODELS: tuple = (
+    "gemini-3.8-flash",
+    "gemini-3.6-flash",
+)
+
+# Optional ops override for the fallback tail (comma-separated). Never set in
+# .env, so the default chain above is what ships; the primary always comes
+# from GEMINI_MODEL.
+_FALLBACK_MODELS_ENV = "GEMINI_FALLBACK_MODELS"
+
+# HTTP statuses that mean "the provider could not serve this right now".
+_TRANSIENT_HTTP_CODES = frozenset({429, 500, 503, 504})
+# Canonical gRPC-style status names Gemini/SDKs report for the same thing.
+_TRANSIENT_STATUS_NAMES = (
+    "RESOURCE_EXHAUSTED",   # quota / rate limit
+    "UNAVAILABLE",           # maintenance / capacity (the 503 case)
+    "DEADLINE_EXCEEDED",     # timeout
+    "OVERLOADED_ERROR",      # Gemini "server overloaded"
+    "INTERNAL",              # transient 500-class server fault
+)
+# Everything the provider REJECTED about the request/credentials: switching
+# models cannot fix it, so the chain aborts and the existing safe error
+# handling runs unchanged.
+_NON_TRANSIENT_STATUS_NAMES = (
+    "INVALID_ARGUMENT", "UNAUTHENTICATED", "PERMISSION_DENIED", "NOT_FOUND",
+    "FAILED_PRECONDITION", "ALREADY_EXISTS", "OUT_OF_RANGE", "UNIMPLEMENTED",
+    "DATA_LOSS", "API_KEY_INVALID", "API_KEY_NOT_VALID", "BAD_REQUEST",
+)
+# Transport-level exception class names that always mean "temporary network
+# problem" (httpx/requests/socket shapes differ across installs, so we match
+# on the name instead of importing a specific package).
+_TRANSIENT_EXC_NAMES = frozenset({
+    "timeouterror", "sockettimeout", "readtimeout", "connecttimeout",
+    "connectiontimeout", "connectionerror", "connectionrefusederror",
+    "connectionreseterror", "remotedisconnected", "protocolerror",
+    "chunkedencodingerror", "sslssleoferror", "gaierror", "socketerror",
+    "transporterror", "retryerror", "apiconnectionerror",
+})
+# Last-resort text hints for plain exceptions that carry no status/code
+# (narrow on purpose: a generic programming error must NOT fail over).
+_TRANSIENT_MESSAGE_HINTS = (
+    "timed out", "timeout", "resource exhausted", "rate limit",
+    "quota exceeded", "try again later", "please retry", "overloaded",
+    "temporarily unavailable", "server is currently unavailable",
+    "connection reset", "connection aborted", "connection refused",
+    "network is down", "network error", "network is unreachable",
+    "name resolution", "temporarily failed",
+)
+
+
+def _model_chain(primary: Optional[str]) -> List[str]:
+    """Ordered models to try: the configured primary first, then the
+    fallback tail. De-duplicated, so a fallback that repeats the primary is
+    never called twice in the same chain (requirement: no model twice)."""
+    configured = (os.getenv(_FALLBACK_MODELS_ENV) or "").strip()
+    if configured:
+        tail = [m.strip() for m in configured.split(",") if m.strip()]
+    else:
+        tail = list(FALLBACK_MODELS)
+    chain: List[str] = []
+    for model in [(primary or DEFAULT_MODEL).strip(), *tail]:
+        if model and model not in chain:
+            chain.append(model)
+    return chain
+
+
+# API keys must never reach a log line, even inside an SDK error message.
+_SECRET_RE = re.compile(
+    r"(AIza[0-9A-Za-z_\-]{6,})"
+    r"|((?:api[_\- ]?key|token|secret)[\"']?\s*[:=]\s*[\"']?[^\s\"',}]{4,})",
+    re.IGNORECASE,
+)
+
+
+def _safe_error_note(exc: BaseException) -> str:
+    """Short, secret-scrubbed description of an error, for logging only."""
+    note = f"{type(exc).__name__}: {exc}"
+    return _SECRET_RE.sub("[redacted]", note)[:240]
+
+
+def _exception_http_code(exc: BaseException) -> Optional[int]:
+    """HTTP status of an SDK error when it carries one (genai APIError has
+    .code; some transports use .status_code)."""
+    for attr in ("code", "status_code"):
+        value = getattr(exc, attr, None)
+        if isinstance(value, int) and 100 <= value <= 599:
+            return value
+    return None
+
+
+def _exception_status_name(exc: BaseException) -> str:
+    """gRPC-style status string (genai APIError.status) upper-cased, or ''."""
+    status = getattr(exc, "status", None)
+    return status.upper() if isinstance(status, str) else ""
+
+
+def _is_transient_error(exc: BaseException) -> bool:
+    """Should the NEXT model in the chain be tried?
+
+    True only for transient provider problems: 429/RESOURCE_EXHAUSTED,
+    503/UNAVAILABLE, 5xx, timeouts and temporary network failures.
+    False for authentication (bad key), invalid request/unsupported input,
+    and any application/programming error — those keep the existing safe
+    error handling and must not burn quota on other models.
+    """
+    code = _exception_http_code(exc)
+    if code is not None:
+        if code in _TRANSIENT_HTTP_CODES:
+            return True
+        if 400 <= code < 500:
+            return False  # 401/403 key problems, 400/404/415 bad request
+        return 500 <= code < 600  # other 5xx are provider-side faults
+
+    status = _exception_status_name(exc)
+    if status:
+        if any(name in status for name in _TRANSIENT_STATUS_NAMES):
+            return True
+        if any(name in status for name in _NON_TRANSIENT_STATUS_NAMES):
+            return False
+
+    if isinstance(exc, (TimeoutError, ConnectionError)):
+        return True
+    if {c.__name__.lower() for c in type(exc).__mro__} & _TRANSIENT_EXC_NAMES:
+        return True
+
+    message = str(exc).lower()
+    return any(hint in message for hint in _TRANSIENT_MESSAGE_HINTS)
+
 
 # Local knowledge base (same file/idea the Qwen pipeline uses). Loaded once,
 # lazily, on the first confident diagnosis.
@@ -48,6 +192,18 @@ KB_MAX_ENTRIES = 3  # shortlist size fed to the grounding call (keeps prompts ch
 # farmer — we recommend a human expert instead. Mirrors the safety net used
 # by Member 1's Qwen pipeline (ai_pipeline.CONFIDENCE_THRESHOLD = 60/100).
 CONFIDENCE_THRESHOLD = 0.60
+
+# The crop families the trained MobileNetV2 can ACTUALLY recognize (derived
+# from the 16-class mapping: Corn, Potato, Tomato, Orange + Background). A
+# softmax classifier will happily emit ~0.99 for one of these classes even when
+# the photo is a crop it never saw (e.g. wheat -> "Corn healthy"). We use a
+# cheap Gemini Vision crop-identity check to flag such out-of-domain predictions
+# instead of blindly trusting confidence. Matched case-insensitively as
+# substrings of the crop name Gemini reports.
+ML_SUPPORTED_CROPS = (
+    "corn", "maize", "potato", "tomato", "orange", "citrus",
+    "aloo", "tamatar", "makki", "makai", "santra", "narangi",  # roman aliases
+)
 
 FALLBACK_ADVICE = (
     "We could not confidently diagnose this from the photo and question "
@@ -143,7 +299,14 @@ it override what is actually visible in the image.
 # instruction appended to the prompts. Anything unknown/missing stays English
 # so the existing English behavior is preserved.
 _LANGUAGE_INSTRUCTIONS = {
-    "en": None,  # English is the prompt's default — no extra instruction.
+    "en": (
+        'LANGUAGE: Answer in clear ENGLISH. Write the "diagnosis_localized" '
+        'and "advice" values in plain English (English words in Latin '
+        "letters). Do NOT answer in Roman Urdu (Urdu spelled with Latin "
+        'letters, e.g. "Aapki fasal ki pattiwon par ...") and do NOT use '
+        "Urdu/Arabic script. Standard disease/chemical names are already "
+        "English and stay as-is.\n"
+    ),
     "ur": (
         'LANGUAGE: Keep the "diagnosis" value in the STANDARD ENGLISH '
         'disease name (it is matched against a knowledge base -- '
@@ -217,6 +380,50 @@ _DEVANAGARI_RE = re.compile(r"[\u0900-\u097F]")
 # Latin letters — used to detect Roman Urdu masquerading as Urdu script.
 _LATIN_LETTER_RE = re.compile(r"[A-Za-z]")
 
+# Characters that are NOT allowed inside an Urdu-script diagnosis label.
+# An allowlist (Urdu/Arabic + Latin + digits + neutral punctuation) is used
+# instead of a blocklist of "bad" scripts because Gemini mixes in lookalike
+# letters from ANY Indic script: the reproduced label
+# "ٹमेٹو یلو লিফ ಕरل وाइرس" smuggles Devanagari, Bengali AND Kannada into an
+# otherwise-Urdu string, and checking only for Devanagari lets the rest pass.
+# Standard English disease/chemical names ("Tomato Yellow Leaf Curl Virus")
+# stay allowed inside Urdu labels.
+_NON_URDU_LABEL_CHAR_RE = re.compile(
+    r"[^\u0600-\u06FFA-Za-z0-9\s.,;:!?(){}\[\]/&%'\"“”‘’—–-]"
+)
+
+# Same idea for Roman Urdu / English labels: Latin script and neutral
+# punctuation only, so Urdu/Arabic and every Indic block are rejected.
+_NON_LATIN_LABEL_CHAR_RE = re.compile(
+    r"[^A-Za-z0-9\s.,;:!?(){}\[\]/&%'\"“”‘’—–-]"
+)
+
+
+def _has_foreign_script_letters(text: Optional[str], *, urdu_allowed: bool) -> bool:
+    """True when TEXT holds a LETTER from a script outside the allowed set.
+
+    Allowed: Latin always, Urdu/Arabic script when `urdu_allowed`. Digits,
+    punctuation, symbols and whitespace are script-neutral and never flagged,
+    so this can not over-restrict legitimate prose.
+
+    This is the character-level ALLOWLIST principle already used for diagnosis
+    labels, applied to prose. A blocklist cannot work here: Gemini spells local
+    words with lookalike letters from ANY Unicode block, so screening only for
+    Devanagari still let through Bengali/Kannada/Telugu-polluted "Urdu". Every
+    other letter-bearing script — Devanagari, Bengali, Gurmukhi, Gujarati,
+    Oriya, Tamil, Telugu, Kannada, Malayalam, Sinhala, Thai, CJK, Cyrillic,
+    Greek, Hebrew, Arabic Presentation Forms … — is rejected by construction.
+    """
+    for char in text or "":
+        if not char.isalpha():
+            continue  # digits / punctuation / symbols / whitespace: neutral
+        if ("a" <= char <= "z") or ("A" <= char <= "Z"):
+            continue
+        if urdu_allowed and "\u0600" <= char <= "\u06FF":
+            continue
+        return True
+    return False
+
 
 def _has_devanagari(text: Optional[str]) -> bool:
     return bool(_DEVANAGARI_RE.search(text or ""))
@@ -245,16 +452,71 @@ def _latin_script_dominant(text: Optional[str]) -> bool:
     return latin_words > urdu_words
 
 
+# Roman Urdu disguised as English. A SCRIPT check cannot separate the two:
+# both are pure Latin, so the old `en` rule ("Latin only, no Urdu/foreign
+# letters") happily accepted "Aapki fasal ki pattiwon par … dhabbe dikh rahe
+# hain" as valid English and _ensure_script returned it untouched — the exact
+# en-mode bug. Roman Urdu, however, is built from high-frequency Urdu function
+# words and farm vocabulary spelled with Latin letters; genuine English advice
+# never contains them. Matching those distinctive WORDS (whole-token, so an
+# English word that merely shares letters is safe) lets the English gate reject
+# a Roman-Urdu answer and force the validated English rewrite / static fallback.
+# The list is deliberately limited to strongly-Roman-Urdu tokens, excluding
+# Latin look-alikes that are ordinary English words ("the", "for", "main",
+# "can", "may", "so", "no", "is", "in", "be", …).
+_ROMAN_URDU_MARKER_TOKENS = frozenset({
+    # auxiliary / verb + case particles
+    "hai", "hain", "nahi", "nahin", "nhi", "tha", "thi", "thay", "hoga",
+    "hogi", "hona", "hua", "hui", "huay", "raha", "rahe", "rahi", "rahay",
+    "karo", "karein", "kare", "karna", "karnay", "karke", "karday", "dena",
+    "lenay", "lene", "dekhay", "dekho", "dikh", "dikhai", "nazar",
+    # quantifiers / degree
+    "zyada", "zayada", "bohat", "bahut", "thora", "kam",
+    # connectives / question words
+    "taake", "taakay", "kyunke", "kyunki", "lekin", "magar", "phir", "bhi",
+    "agar", "kyun", "kahan", "qab",
+    # agronomy / advisory vocabulary
+    "mashwara", "mashwaray", "masla", "maslay", "tashkhees", "khaas",
+    "kisan", "fasal", "khet", "zameen", "patta", "pattay", "patton", "patti",
+    "pattiyan", "patte", "daagh", "dhabbe", "dhabbay", "saaf", "theek",
+    "jald", "foran", "dobara", "dubara", "pehlay", "pahlay", "acha", "accha",
+    "sahi", "ghalat", "wala", "wale", "wali", "sath", "saath", "sirf",
+    "ilaj", "ilaaj", "dawai", "dawaiyan", "zaroorat", "zaruri",
+    # pronouns / possessives
+    "aapki", "aapka", "apni", "apna", "apko",
+})
+
+
+def _looks_like_roman_urdu(text: Optional[str]) -> bool:
+    """True when Latin-only prose is really Roman Urdu, not English.
+
+    Requires TWO DISTINCT marker words so an isolated coincidence inside
+    genuine English advice (which carries none of this vocabulary) can never
+    trip it, while any real Roman-Urdu sentence matches several at once.
+    """
+    seen = set()
+    for token in re.findall(r"[a-z]+", (text or "").lower()):
+        if token in _ROMAN_URDU_MARKER_TOKENS:
+            seen.add(token)
+            if len(seen) >= 2:
+                return True
+    return False
+
+
+
 def _prose_matches_language(text: str, language: Optional[str]) -> bool:
     """Script-level language check for generated advice/follow-up prose.
 
-    en  -> English: no Urdu/Arabic and no Devanagari characters.
-    ur  -> must contain meaningful Urdu-script prose (not Roman Urdu/English)
-           and must NOT be polluted with Devanagari (a different script).
-           A Latin-word-dominant paragraph is Roman Urdu even when it holds
-           a handful of Urdu characters, so dominance is rejected explicitly.
-    rom -> must be Latin-only, i.e. ZERO Urdu/Arabic-script characters and
-           zero Devanagari characters.
+    en  -> English: Latin script only (no Urdu/Arabic, no other script).
+    ur  -> must contain meaningful Urdu-script prose (not Roman Urdu/English),
+           must NOT be Latin-word-dominant, and may only mix in Latin letters
+           (standard disease/chemical names). ANY other script is a leak —
+           8+ genuine Urdu characters do not license Bengali/Kannada/etc.
+    rom -> Latin-only, i.e. zero Urdu/Arabic and zero other non-Latin letters.
+
+    The Urdu minimum and the Latin-dominance rule are unchanged; the foreign-
+    script allowlist is purely additive, so nothing that used to pass can now
+    fail except prose carrying an unrelated script.
     """
     key = (language or "en").strip().lower()
     if key == "ur":
@@ -262,19 +524,38 @@ def _prose_matches_language(text: str, language: Optional[str]) -> bool:
             _urdu_script_count(text) >= 8
             and not _has_devanagari(text)
             and not _latin_script_dominant(text)
+            and not _has_foreign_script_letters(text, urdu_allowed=True)
         )
     if key == "rom":
-        return _urdu_script_count(text) == 0 and not _has_devanagari(text)
+        return (
+            _urdu_script_count(text) == 0
+            and not _has_devanagari(text)
+            and not _has_foreign_script_letters(text, urdu_allowed=False)
+        )
     if key == "en":
-        return _urdu_script_count(text) == 0 and not _has_devanagari(text)
+        return (
+            _urdu_script_count(text) == 0
+            and not _has_devanagari(text)
+            and not _has_foreign_script_letters(text, urdu_allowed=False)
+            # English is Latin script, and so is Roman Urdu — a script check
+            # alone cannot tell them apart. Reject clear Roman-Urdu vocabulary
+            # so a Roman-Urdu answer to an English request is not accepted as
+            # valid English and instead routes through the English rewrite/
+            # fallback chain.
+            and not _looks_like_roman_urdu(text)
+        )
     return True
 
 
 def _localized_name_matches(name: str, language: Optional[str]) -> bool:
     """Script check for a short localized DIAGNOSIS label (not full prose).
 
-    ur  -> must actually be Urdu script (a Roman/English label would leak).
-    rom -> must be Latin-only (zero Urdu/Arabic characters).
+    ur  -> must actually be Urdu script (a Roman/English label would leak)
+           and must not smuggle in ANY other script — Bengali, Kannada,
+           Telugu, Tamil, Gurmukhi, Gujarati, Oriya, Malayalam, Sinhala, …
+           are all rejected by the allowlist, while a legitimate English
+           disease name inside the Urdu label stays valid.
+    rom -> Latin script only (zero Urdu/Arabic and zero non-Latin characters).
     en  -> no separate localized label is needed.
     """
     key = (language or "en").strip().lower()
@@ -284,11 +565,15 @@ def _localized_name_matches(name: str, language: Optional[str]) -> bool:
     if _has_devanagari(cleaned):
         return False  # Devanagari is never a valid label in any mode.
     if key == "ur":
+        # Any character outside the Urdu/Latin/punctuation allowlist belongs
+        # to a third script -> the label is mixed-script and must not display.
+        if _NON_URDU_LABEL_CHAR_RE.search(cleaned):
+            return False
         # Urdu script AND not Latin-word-dominant (a Roman label with two
         # Urdu words pasted in is still Roman Urdu and must not display).
         return _urdu_script_count(cleaned) >= 2 and not _latin_script_dominant(cleaned)
     if key == "rom":
-        return _urdu_script_count(cleaned) == 0
+        return not _NON_LATIN_LABEL_CHAR_RE.search(cleaned)
     return False
 
 
@@ -386,6 +671,11 @@ class GeminiDiagnosisProvider(DiagnosisProvider):
         """
         self.model = model or os.getenv("GEMINI_MODEL") or DEFAULT_MODEL
         self._client = client if client is not None else self._build_client()
+        # Ordered models tried for EVERY Gemini call (configured primary
+        # first, then the fallback tail) — see _generate_with_failover().
+        self.model_chain = _model_chain(self.model)
+        # Which model actually answered last (observability / tests only).
+        self.last_model_used: Optional[str] = None
         # Lazy-loaded local KB (RAG-lite grounding), shared with the Qwen
         # pipeline's loader — see _get_knowledge_base().
         self._knowledge_base: Optional[List[Dict[str, Any]]] = None
@@ -403,6 +693,72 @@ class GeminiDiagnosisProvider(DiagnosisProvider):
         from google import genai  # type: ignore
 
         return genai.Client(api_key=api_key)
+
+    # -- Model failover transport ---------------------------------------
+
+    def _generate_with_failover(
+        self,
+        *,
+        contents: List[Any],
+        config: Optional[Any] = None,
+        call_name: str,
+    ) -> Any:
+        """ONE Gemini call, attempted across the model chain in order.
+
+        Exactly one attempt per model — never a retry loop: the next model is
+        tried only when the current attempt fails with a transient provider
+        problem (429/RESOURCE_EXHAUSTED, 503/UNAVAILABLE, timeout/temporary
+        network failure). A non-transient failure (invalid key, invalid
+        request, unsupported input, programming error) aborts immediately so
+        the existing safe error handling applies and no quota is burned. When
+        the whole chain is unavailable the LAST error is re-raised, which is
+        exactly what the existing callers already convert into their
+        conservative fallback.
+
+        The raw response is returned untouched: every layer above (JSON
+        parse, confidence threshold, KB grounding, final language gate) still
+        validates it, so a fallback model is held to the same contract as the
+        primary model. No API key is ever logged — see _safe_error_note().
+        """
+        chain = self.model_chain
+        last_exc: Optional[BaseException] = None
+        for index, model in enumerate(chain):
+            kwargs: Dict[str, Any] = {"model": model, "contents": contents}
+            if config is not None:
+                kwargs["config"] = config
+            try:
+                response = self._client.models.generate_content(**kwargs)
+            except Exception as exc:  # noqa: BLE001 - classified right here
+                if not _is_transient_error(exc):
+                    logger.error(
+                        "Gemini %s call failed on model '%s' with a non-transient "
+                        "error (%s); not failing over to another model.",
+                        call_name, model, _safe_error_note(exc),
+                    )
+                    raise
+                last_exc = exc
+                next_model = chain[index + 1] if index + 1 < len(chain) else None
+                logger.warning(
+                    "Gemini %s call failed on model '%s' (transient: %s); %s",
+                    call_name,
+                    model,
+                    _safe_error_note(exc),
+                    f"trying fallback model '{next_model}'" if next_model
+                    else "no further fallback models in the chain",
+                )
+                continue
+            if index:
+                logger.info(
+                    "Gemini %s call recovered on fallback model '%s' "
+                    "(attempt %d/%d of the chain).",
+                    call_name, model, index + 1, len(chain),
+                )
+            self.last_model_used = model
+            return response
+        # _model_chain always yields at least one model, so a completed loop
+        # without a response means every model in the chain failed transiently.
+        assert last_exc is not None
+        raise last_exc
 
     # -- Local knowledge base (RAG-lite grounding) ----------------------
 
@@ -448,18 +804,24 @@ class GeminiDiagnosisProvider(DiagnosisProvider):
         ]
 
     def _call_text(self, prompt: str) -> Optional[str]:
-        """Single cheap text-only Gemini call. Returns the raw stripped text, or
-        None when the call itself fails (network/auth/etc.)."""
+        """Single cheap text-only Gemini call (with model failover). Returns
+        the raw stripped text, or None when every model in the chain fails
+        (network/auth/etc.)."""
         try:
             from google.genai import types  # type: ignore
 
-            response = self._client.models.generate_content(
-                model=self.model,
+            response = self._generate_with_failover(
                 contents=[prompt],
                 config=types.GenerateContentConfig(temperature=0.2),
+                call_name="text",
             )
-        except Exception:  # noqa: BLE001 - callers fall back conservatively
-            logger.exception("Gemini text call failed")
+        except Exception as exc:  # noqa: BLE001 - callers fall back conservatively
+            # No traceback/exception text beyond the scrubbed note: an SDK
+            # message could carry the API key, which must never be logged.
+            logger.error(
+                "Gemini text call failed on every model in the chain: %s",
+                _safe_error_note(exc),
+            )
             return None
         return (getattr(response, "text", None) or "").strip()
 
@@ -599,7 +961,14 @@ class GeminiDiagnosisProvider(DiagnosisProvider):
             values = entry.get(field) or []
             if isinstance(values, str):
                 values = [values]
-            parts.extend(str(v).strip() for v in values if str(v).strip())
+            for v in values:
+                line = str(v).strip()
+                # Some curated KB lines carry lookalike letters from other
+                # scripts (Cyrillic/Devanagari typed instead of Urdu). Drop
+                # those lines rather than discard the whole diagnosis-specific
+                # fallback — the data itself is never rewritten here.
+                if line and not _has_foreign_script_letters(line, urdu_allowed=True):
+                    parts.append(line)
         if not parts:
             return ""
         text = " ".join(parts[:3])
@@ -690,10 +1059,221 @@ class GeminiDiagnosisProvider(DiagnosisProvider):
 
         return self._generate_advice(prompt, language)
 
+    # -- MobileNetV2 primary classifier ---------------------------------
+
+    def _diagnose_from_ml(self, image: ImageInput, ml: Dict[str, Any]) -> dict:
+        """Build the final answer when MobileNetV2 produced a prediction.
+
+        MobileNetV2 stays the PRIMARY Data Science model: a supported,
+        trustworthy class remains ML-final and Gemini only explains it. But
+        confidence is NOT treated as proof of correctness -- a softmax can be
+        confidently wrong on a crop the model never saw. Decision order:
+          1. confidence < 0.60          -> uncertain: do NOT blindly accept the
+             ML class; let Gemini Vision attempt the diagnosis (its path
+             returns a localized Unknown + needs_expert if it also cannot).
+          2. confident Background class -> the model saw a real plant it could
+             not place (whole-plant / field photos). Do NOT auto-reject: run the
+             existing Gemini Vision analysis as a plant sanity check + diagnosis.
+          3. confident disease class    -> verify the CROP identity with Gemini
+             Vision first. If the crop is out of the model's supported scope
+             (e.g. wheat misread as "Corn healthy"), reject the ML class and
+             defer to Gemini Vision; otherwise ML is FINAL and Gemini explains.
+        """
+        fallback_advice = _localized(FALLBACK_ADVICE_BY_LANG, image.language)
+        confidence = round(float(ml.get("confidence") or 0.0), 3)
+        class_name = ml.get("class_name") or ""
+        display_name = ml.get("display_name") or class_name
+
+        # 1) Below threshold: the classifier itself is unsure. Give Gemini
+        # Vision the chance to diagnose from the image + question; when it also
+        # cannot, its path returns the localized Unknown + needs_expert safety
+        # net (same UX as before, but the crop is not judged on softmax alone).
+        if confidence < ml_classifier.CONFIDENCE_THRESHOLD:
+            return self._vision_diagnose(image)
+
+        # 2) Confident trained reject class. MobileNetV2 was NOT sure there was
+        # no plant -- it just could not map this photo to a disease leaf class.
+        # Real farmer photos (whole plants, stems, soil, sky) land here. Defer
+        # to the existing Gemini Vision path, which both re-checks "is there a
+        # plant?" and diagnoses it, keeping the localized not-a-plant response
+        # only when Vision also agrees there is no usable plant subject.
+        if class_name == ml_classifier.BACKGROUND_CLASS:
+            return self._vision_diagnose(image)
+
+        # 3) Confident disease prediction. Before trusting it, verify the CROP
+        # identity: a supported crop keeps ML final; an out-of-domain crop
+        # (wheat, rice, cotton, grape...) is handed to Gemini Vision instead of
+        # being forced into a class the model was never trained on.
+        if self._verify_ml_crop(image, class_name) == "ood":
+            logger.info(
+                "MobileNetV2 prediction '%s' flagged out-of-domain by Gemini "
+                "Vision crop check; deferring diagnosis to Vision.",
+                class_name,
+            )
+            return self._vision_diagnose(image)
+
+        # 3b) Supported + trustworthy: ML is FINAL.
+        advice = self._describe_ml_diagnosis(
+            class_name, display_name, confidence,
+            (image.question or "").strip(), image.language,
+        )
+        if advice is None:
+            # Classifier answered but the advisor didn't: keep the ML
+            # diagnosis visible, stay conservative, surface the error.
+            return {
+                "filename": image.filename,
+                "diagnosis": display_name,
+                "confidence": confidence,
+                "advice": fallback_advice,
+                "needs_expert": True,
+                "error": (
+                    "MobileNetV2 classified the image, but Gemini could not "
+                    "generate grounded advice."
+                ),
+            }
+        return {
+            "filename": image.filename,
+            "diagnosis": display_name,
+            "confidence": confidence,
+            "advice": advice,
+            "needs_expert": False,
+        }
+
+    def _verify_ml_crop(self, image: ImageInput, class_name: str) -> str:
+        """Cheap Gemini Vision crop-identity check used to catch a *confidently
+        wrong* MobileNetV2 prediction on a crop the model never trained on
+        (softmax can output ~0.99 for e.g. wheat as "Corn healthy"). This does
+        NOT re-diagnose the disease -- it only asks which CROP is in frame.
+
+        Returns:
+          'ood'       -> Gemini clearly sees a crop OUTSIDE the model's
+                         supported set; the ML class must not be trusted.
+          'supported' -> Gemini sees a supported crop (prediction is in-domain).
+          'unclear'   -> call failed / unparseable / ambiguous, so we
+                         conservatively keep the ML diagnosis final.
+        """
+        ml_crop = class_name.split("___")[0] if "___" in class_name else class_name
+        try:
+            from google.genai import types  # type: ignore
+
+            mime_type = _guess_mime_type(image.content_type, image.filename)
+            prompt = (
+                f"A crop-disease image classifier labelled this photo as a "
+                f"'{ml_crop}' plant. Look ONLY at the plant/crop itself (not "
+                "any disease) and decide what crop it really is.\n"
+                "The classifier can ONLY recognize these crops: corn/maize, "
+                "potato, tomato, orange/citrus. Any other crop (wheat, rice, "
+                "cotton, chili, onion, mango, grape, apple, sugarcane, etc.) "
+                "is OUT OF ITS SCOPE.\n"
+                'Respond with ONLY JSON: {"crop_seen": "<the crop you '
+                'actually see>", "is_supported_crop": <true only if it is '
+                "corn/maize, potato, tomato or orange/citrus>, "
+                '"matches_ml_crop": <true if crop_seen is the same crop '
+                f"family as '{ml_crop}'>>}}.\n"
+                "Be conservative: set is_supported_crop to false ONLY when you "
+                "clearly see a different crop, not when you are unsure."
+            )
+            response = self._generate_with_failover(
+                contents=[
+                    types.Part.from_bytes(data=image.data, mime_type=mime_type),
+                    prompt,
+                ],
+                config=types.GenerateContentConfig(temperature=0.0),
+                call_name="crop-verification",
+            )
+        except Exception as exc:  # noqa: BLE001 - never block a diagnosis on the check
+            logger.info(
+                "Gemini crop-verification skipped (%s)", _safe_error_note(exc)
+            )
+            return "unclear"
+
+        parsed = _extract_json(getattr(response, "text", None))
+        if not isinstance(parsed, dict):
+            return "unclear"
+
+        seen = str(parsed.get("crop_seen", "")).strip().lower()
+        supported_flag = parsed.get("is_supported_crop")
+        matches_flag = parsed.get("matches_ml_crop")
+
+        # Explicit "different, unsupported crop" -> out of domain.
+        if supported_flag is False:
+            return "ood"
+        # Gemini affirmed in-domain -> trust the ML class.
+        if supported_flag is True or matches_flag is True:
+            return "supported"
+        # No boolean given but a crop name: fall back to a keyword match.
+        if seen:
+            return "supported" if any(k in seen for k in ML_SUPPORTED_CROPS) else "ood"
+        return "unclear"
+
+    def _describe_ml_diagnosis(
+        self,
+        class_name: str,
+        display_name: str,
+        confidence: float,
+        question_text: str,
+        language: Optional[str],
+    ) -> Optional[str]:
+        """Generate the farmer-facing advice for a FIXED MobileNetV2 diagnosis.
+
+        Reuses the existing RAG-lite grounding (KB retrieval + rewrite call);
+        when the KB holds no matching entry, falls back to a text-only
+        explanation call. On any Gemini failure returns None and the caller
+        keeps the conservative fallback. The diagnosis itself is never
+        delegated to Gemini.
+        """
+        observed = (
+            "MobileNetV2 image classifier predicted "
+            f"'{display_name}' (dataset class '{class_name}') with "
+            f"{confidence * 100:.0f}% confidence."
+        )
+        # 1) KB-grounded rewrite when a relevant entry exists.
+        advice = self._grounded_advice(display_name, observed, question_text, language)
+        if advice:
+            return advice
+
+        # 2) No KB match: text-only explanation of the classifier result.
+        prompt = (
+            "You are FasalDoc, an agricultural advisor for farmers in "
+            "Pakistan.\n"
+            + _advice_language_instruction(language)
+            + " Keep disease names medically meaningful (the standard English "
+            "disease name may stay inside a local-language sentence).\n\n"
+            f"A trained MobileNetV2 image classifier has already diagnosed "
+            f"the farmer's photo: {display_name} (confidence "
+            f"{confidence * 100:.0f}%).\n"
+            "This diagnosis is FINAL. You MUST NOT replace it with another "
+            "disease, hedge that it could be something else, or ask for a "
+            "re-diagnosis. Explain what this condition means and give 2-5 "
+            "sentences of practical, low-cost, farmer-friendly advice: what "
+            "to watch for, immediate steps, and when to consult a local "
+            "agriculture expert. For any pesticide/fungicide mention, tell "
+            "the farmer to confirm the dose with a local agriculture expert "
+            "or dealer. If the predicted condition includes 'healthy', "
+            "reassure the farmer and give simple preventive care tips "
+            "instead of treatment.\n"
+            f"Farmer's question: {question_text or '(none)'}\n\n"
+            "Return ONLY the advice text — no JSON, no labels, no markdown."
+        )
+        return self._generate_advice(prompt, language)
+
     # -- DiagnosisProvider interface -----------------------------------
 
     def diagnose(self, image: ImageInput) -> dict:
-        result = self._vision_diagnose(image)
+        # Primary classifier: the trained MobileNetV2 runs first. When it
+        # loads and predicts, its class IS the diagnosis and Gemini only
+        # explains it (or, for a confident reject class, sanity-checks the
+        # photo). "unavailable"/"error" (no TF in this env, model files
+        # missing, corrupt image bytes) fall through to the Gemini vision flow.
+        ml_result = ml_classifier.get_classifier().predict(image.data)
+        if ml_result.get("status") == ml_classifier.STATUS_OK:
+            result = self._diagnose_from_ml(image, ml_result)
+        else:
+            result = self._vision_diagnose(image)
+        # THE FINAL LANGUAGE GATE — the last boundary before the dict is
+        # handed to diagnosis_service -> /diagnose -> DiagnosisResponse.
+        # Every path (vision, ML-final, error dicts) funnels through exactly
+        # one deterministic validation of the ACTUAL final values.
         return self._finalize_result(result, image)
 
     def _finalize_result(self, result: Dict[str, Any], image: ImageInput) -> Dict[str, Any]:
@@ -730,9 +1310,9 @@ class GeminiDiagnosisProvider(DiagnosisProvider):
         return result
 
     def _vision_diagnose(self, image: ImageInput) -> dict:
-        """Gemini vision diagnosis flow: build the prompt, parse the model
-        response, apply the confidence safety net, and ground the advice in
-        the local knowledge base."""
+        """Original Gemini vision diagnosis flow, unchanged. Used directly when
+        MobileNetV2 is unavailable, and reused as the plant-photo sanity check
+        when MobileNetV2 confidently predicts the trained reject class."""
         filename = image.filename
         question_text = (image.question or "").strip()
         # Language-aware safety-net texts; threshold logic stays unchanged.
@@ -750,8 +1330,7 @@ class GeminiDiagnosisProvider(DiagnosisProvider):
                 "Diagnose the crop issue from the photo alone."
             )
 
-            response = self._client.models.generate_content(
-                model=self.model,
+            response = self._generate_with_failover(
                 contents=[
                     types.Part.from_bytes(data=image.data, mime_type=mime_type),
                     prompt_text,
@@ -761,9 +1340,15 @@ class GeminiDiagnosisProvider(DiagnosisProvider):
                     + _language_directive(image.language),
                     temperature=0.2,
                 ),
+                call_name="vision",
             )
         except Exception as exc:  # noqa: BLE001 - network/SDK/auth errors, etc.
-            logger.exception("Gemini diagnose() call failed")
+            # The scrubbed note only: logging the raw exception/traceback could
+            # surface an API key that the provider echoed back in its message.
+            logger.error(
+                "Gemini diagnose() call failed on every model in the chain: %s",
+                _safe_error_note(exc),
+            )
             return {
                 "filename": filename,
                 "diagnosis": "Unknown",
@@ -865,15 +1450,18 @@ class GeminiDiagnosisProvider(DiagnosisProvider):
         }
 
     def _followup_generate(self, prompt: str) -> str:
-        """One follow-up text call. Re-raises on transport failure so the route
-        returns a clean 500 rather than dressing an outage up as an answer."""
+        """One follow-up text call (with model failover). Re-raises on transport
+        failure so the route returns a clean 500 rather than dressing an
+        outage up as an answer."""
         try:
-            response = self._client.models.generate_content(
-                model=self.model,
+            response = self._generate_with_failover(
                 contents=[prompt],
+                call_name="follow-up",
             )
         except Exception as exc:  # noqa: BLE001
-            logger.exception("Gemini answer_followup() call failed")
+            logger.error(
+                "Gemini answer_followup() call failed: %s", _safe_error_note(exc)
+            )
             raise RuntimeError(f"Gemini follow-up failed: {exc}") from exc
         return (getattr(response, "text", None) or "").strip()
 

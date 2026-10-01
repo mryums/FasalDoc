@@ -138,6 +138,10 @@ export default function App() {
   const [user, setUser] = useState<AuthUser | null>(null)
   const idCounter = useRef(0)
   const diagnosisRan = useRef(false)
+  // The language the currently-displayed `advice` was actually generated in.
+  // Advice comes back from the backend frozen to the request-time language, so
+  // we track it to detect a mismatch against the active UI language.
+  const diagnosedLang = useRef<string | null>(null)
 
   // Check auth on mount
   useEffect(() => {
@@ -201,12 +205,33 @@ export default function App() {
     const question = state.question
 
     diagnoseImage(file, question, lang)
-      .then((diagnosis) => dispatch({ type: 'diagnosis-success', diagnosis }))
+      .then((diagnosis) => {
+        diagnosedLang.current = lang
+        dispatch({ type: 'diagnosis-success', diagnosis })
+      })
       .catch((err: unknown) =>
         dispatch({ type: 'diagnosis-error', error: diagnoseErrorMessage(err) }),
       )
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.screen])
+
+  // One-language invariant.
+  // The result screen localizes its headings, diagnosis label and the
+  // Symptoms/Treatment/Prevention sections reactively against the ACTIVE lang
+  // (translations + KB), but `advice` is a frozen string the backend generated
+  // for the language sent at REQUEST time. If the farmer changes the language
+  // while a result is on screen, every reactive block flips to the new language
+  // while the advice stays in the old one — the exact "Urdu headings + English
+  // advice" bug. Re-run the SAME diagnosis in the newly selected language so the
+  // single backend-sourced `advice` realigns with the active language (no second
+  // translation layer, no parallel rendering).
+  useEffect(() => {
+    if (state.screen !== 'result' || !state.diagnosis) return
+    if (diagnosedLang.current === lang) return
+    diagnosisRan.current = false
+    dispatch({ type: 'start-diagnosis' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang, state.screen])
 
   function diagnoseErrorMessage(err: unknown): string {
     if (err instanceof ApiError) {

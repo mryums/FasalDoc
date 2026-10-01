@@ -153,5 +153,54 @@ def test_diagnose_route_returns_provider_advice_unchanged(tmp_path, monkeypatch)
     assert body["diagnosis_localized"] == "ٹماٹر زرد پتی کرل وائرس"
 
 
+# ---------------------------------------------------------------------------
+# 7. Exactly ONE React tree per document — the multi-language-block guard.
+#    A second `createRoot()` on #root does not replace the first tree, it
+#    APPENDS a fully independent one, each with its own LanguageProvider state
+#    (frozen to the language active at its own mount). That is the only way the
+#    ResultScreen can show Urdu + English + Roman Urdu blocks on one page with
+#    the advice repeated — reproduced after the Vite dev server was restarted
+#    while a tab was open (the entry re-executes under a fresh `?t=` stamp).
+# ---------------------------------------------------------------------------
+
+def test_entry_mounts_exactly_one_react_root():
+    src = _read("main.tsx")
+    assert "__fasaldocRoot" in src, (
+        "main.tsx must reuse the stored root instead of calling createRoot() "
+        "again — an unguarded second mount duplicates the whole UI"
+    )
+    # createRoot() may only appear inside the `if (!container.__fasaldocRoot)`
+    # guard, never unconditionally at module scope.
+    assert re.search(
+        r"if\s*\(\s*!\s*container\.__fasaldocRoot\s*\)\s*\{\s*"
+        r"container\.__fasaldocRoot\s*=\s*createRoot\(",
+        src,
+    ), "createRoot() in main.tsx must be behind the idempotent-mount guard"
+    assert src.count("createRoot(") == 2  # import + the single guarded call
+
+
+def test_result_screen_renders_one_block_per_language():
+    """Real render (Vite SSR + react-dom/server), not a source grep: one
+    diagnosis section, one confidence section, one advice section, one advice
+    text, in the selected language only, for all three languages."""
+    import shutil
+    import subprocess
+
+    node = shutil.which("node")
+    fe = os.path.join(ROOT, "frontend")
+    script = os.path.join(fe, "scripts", "render_contract.mjs")
+    if not node or not os.path.isdir(os.path.join(fe, "node_modules", "vite")):
+        pytest.skip("node or frontend deps unavailable for the render contract")
+
+    proc = subprocess.run(
+        [node, script], cwd=fe, capture_output=True, text=True, timeout=180
+    )
+    assert proc.returncode == 0, (
+        "ResultScreen render contract violated:\n"
+        f"{proc.stdout}\n{proc.stderr}"
+    )
+    assert "CONTRACT OK" in proc.stdout
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

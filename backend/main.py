@@ -25,7 +25,7 @@ app = FastAPI(
 # CORS for local frontend development.
 # Defaults to the Vite dev server; override with CORS_ALLOW_ORIGINS
 # (comma-separated) for other environments.
-_DEFAULT_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
+_DEFAULT_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174"
 allow_origins = [
     origin.strip()
     for origin in os.getenv("CORS_ALLOW_ORIGINS", _DEFAULT_ORIGINS).split(",")

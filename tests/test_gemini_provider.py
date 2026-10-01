@@ -11,6 +11,13 @@ from backend.services.diagnosis_service import ImageInput
 from backend.services.gemini_provider import GeminiDiagnosisProvider
 
 
+@pytest.fixture(autouse=True)
+def _ml_classifier_disabled(monkeypatch):
+    """Keep these provider tests hermetic from the MobileNetV2 layer: fake
+    JPEG bytes must not trigger a real TF model load when run in the ML env.
+    The ML-first flow itself is covered in tests/test_ml_integration.py."""
+    monkeypatch.setenv("FASALDOC_ML_ENABLED", "0")
+
 
 class _FakeResponse:
     """Mimics the small slice of google.genai's response object we use."""
