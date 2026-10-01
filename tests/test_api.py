@@ -66,7 +66,10 @@ def test_diagnose_valid_image_returns_contract():
     response = client.post("/diagnose", files={"image": VALID_IMAGE})
     assert response.status_code == 200
     data = response.json()
-    assert set(data) == {"filename", "diagnosis", "confidence", "advice", "needs_expert", "error"}
+    assert set(data) == {
+        "filename", "diagnosis", "diagnosis_localized", "confidence",
+        "advice", "needs_expert", "error",
+    }
     assert data["filename"] == "leaf.jpg"
     assert 0 <= data["confidence"] <= 1
     assert isinstance(data["needs_expert"], bool)

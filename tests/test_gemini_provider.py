@@ -11,6 +11,7 @@ from backend.services.diagnosis_service import ImageInput
 from backend.services.gemini_provider import GeminiDiagnosisProvider
 
 
+
 class _FakeResponse:
     """Mimics the small slice of google.genai's response object we use."""
 
@@ -25,9 +26,11 @@ class _FakeModels:
         self._response = response
         self._exc = exc
         self.last_call = None
+        self.calls = []
 
     def generate_content(self, **kwargs):
         self.last_call = kwargs
+        self.calls.append(kwargs)
         if self._exc is not None:
             raise self._exc
         return self._response
@@ -88,7 +91,9 @@ def test_diagnose_sends_image_and_question_together():
 
     provider.diagnose(VALID_IMAGE)
 
-    call = fake_client.models.last_call
+    # The vision call must be FIRST (image + question together); a possible
+    # second call is the KB-grounding text pass.
+    call = fake_client.models.calls[0]
     assert call is not None
     contents = call["contents"]
     # First content item is the image part, second is the question-derived prompt.
