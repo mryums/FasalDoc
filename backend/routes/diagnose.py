@@ -21,6 +21,7 @@ router = APIRouter()
 async def diagnose(
     image: UploadFile = File(...),
     question: Optional[str] = Form(None),
+    language: Optional[str] = Form(None),
 ):
 
     # 1. Check image type
@@ -56,6 +57,7 @@ async def diagnose(
             data=image_data,
             content_type=image.content_type,
             question=clean_question,
+            language=language,
         )
     except HTTPException:
         raise

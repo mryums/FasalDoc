@@ -4,7 +4,7 @@ import { ConfidenceIndicator, confidenceBand } from '../components/ConfidenceInd
 import { Button } from '../components/Button'
 import { ErrorMessage } from '../components/ErrorMessage'
 import { AlertIcon, RefreshIcon } from '../components/icons'
-import { agricultureData } from '../data/agriculture'
+import { localizedDiseaseForDiagnosis } from '../data/agriculture'
 
 interface ResultScreenProps {
   diagnosis: DiagnosisResponse | null
@@ -23,7 +23,7 @@ export function ResultScreen({
   onNewDiagnosis,
   onRetry,
 }: ResultScreenProps) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
 
   // A provider-level error (e.g. Gemini quota outage) must NOT render as a
   // normal "Unknown" diagnosis — show the clean retry/error screen instead.
@@ -43,8 +43,19 @@ export function ResultScreen({
 
   const band = confidenceBand(diagnosis.confidence)
 
-  // Try to enrich with Member 4 data
-  const enrichedInfo = diseaseLookupFromDiagnosis(diagnosis.diagnosis)
+  // Localize the diagnosis heading + Symptoms/Treatment/Prevention content to
+  // the ACTIVE language (Member 4 data). null when no KB entry matches.
+  const enrichedInfo = localizedDiseaseForDiagnosis(diagnosis.diagnosis, lang)
+
+  // "Unknown" is a backend sentinel, not translatable content — render it with
+  // the localized label so Urdu / Roman Urdu mode never shows the English word.
+  // Non-English diagnoses with no KB entry fall back to the AI-provided
+  // localized label, so ur/rom modes never surface a raw English name.
+  const displayDiagnosis =
+    enrichedInfo?.displayName ??
+    (diagnosis.diagnosis === 'Unknown'
+      ? t.result.unknown
+      : (lang !== 'en' && diagnosis.diagnosis_localized) || diagnosis.diagnosis)
 
   return (
     <div className="screen result">
@@ -59,8 +70,10 @@ export function ResultScreen({
 
       <section className="card diagnosis-card" aria-labelledby="diagnosis-heading">
         <p className="card__eyebrow">{t.result.possibleProblem}</p>
+        {/* Exact ee6e5b5 markup: no per-element `dir`. Urdu RTL comes from the
+            global html dir set in LanguageContext, so rendering is unchanged. */}
         <h2 id="diagnosis-heading" className="diagnosis-card__name">
-          {diagnosis.diagnosis}
+          {displayDiagnosis}
         </h2>
         {band !== 'high' && (
           <p className="diagnosis-card__caution">
@@ -140,33 +153,4 @@ export function ResultScreen({
       </div>
     </div>
   )
-}
-
-/**
- * Try to extract disease info from the diagnosis string.
- * The backend returns diagnosis like "Early Blight" — we match against
- * Member 4's disease names using fuzzy matching.
- */
-function diseaseLookupFromDiagnosis(
-  diagnosisText: string,
-): { symptoms: string[]; treatment: string[]; prevention: string[] } | null {
-  const diagLower = diagnosisText.toLowerCase().trim()
-
-  for (const plant of agricultureData.plants) {
-    for (const disease of plant.diseases) {
-      const nameLower = disease.name.en.toLowerCase()
-      if (
-        nameLower === diagLower ||
-        diagLower.includes(nameLower) ||
-        nameLower.includes(diagLower)
-      ) {
-        return {
-          symptoms: disease.symptoms?.en ?? [],
-          treatment: disease.treatment?.en ?? [],
-          prevention: disease.prevention?.en ?? [],
-        }
-      }
-    }
-  }
-  return null
 }

@@ -125,5 +125,278 @@
     "prevention_tips_urdu": [
       "صاف اور تصدیق شدہ بیج استعمال کریں۔"
     ]
+  },
+  {
+    "id": "tomato_yellow_leaf_curl_virus",
+    "crop": "Tomato",
+    "issue_name_english": "Tomato Yellow Leaf Curl Virus (TYLCV)",
+    "issue_name_urdu": "ٹماٹر زرد پتی کرل وائرس",
+    "symptom_keywords": ["yellowing", "upward curling", "cupped leaves", "leaf curl", "stunted growth", "small yellow leaves", "thickened leaves"],
+    "likely_causes_urdu": "یہ وائرس سفید مکھی (whitefly) کے ذریعے ایک پودے سے دوسرے پودے تک پھیلتا ہے۔ گرم اور خشک موسم میں سفید مکھی تیزی سے بڑھتی ہے۔",
+    "low_cost_treatment_urdu": [
+      "متاثرہ پودوں کو جلد از جلد اکھاڑ کر کھیت سے دور لے جا کر تلف کریں تاکہ وائرس نہ پھیلے۔",
+      "سفید مکھی کے کنٹرول کے لیے پیلے چپکنے والے کارڈ (yellow sticky traps) کھیت میں لگائیں۔",
+      "نیم کے تیل کا محلول سفید مکھی کی کم تعداد میں مددگار ہو سکتا ہے۔"
+    ],
+    "prevention_tips_urdu": [
+      "نرسری میں ننگی آنکھ والے جالے (insect-proof net) کا استعمال کریں تاکہ صحت مند پودے اگائے جا سکیں۔",
+      "وائرس مزاحم اقسام کو ترجیح دیں۔",
+      "کھیت کے ارد گرد جڑی بوٹیاں صاف رکھیں جو سفید مکھی کا آسرا بن سکتی ہیں۔"
+    ],
+    "when_to_seek_expert_urdu": "اگر کھیت کے بیشتر پودوں میں پیلے اور کرل پتے نظر آئیں تو فوری طور پر زرعی ماہر سے مشورہ کریں، کیونکہ اس بیماری کا کوئی علاج نہیں صرف روک تھام ممکن ہے۔"
+  },
+  {
+    "id": "tomato_bacterial_spot",
+    "crop": "Tomato",
+    "issue_name_english": "Tomato Bacterial Spot",
+    "issue_name_urdu": "ٹماٹر کا بیکٹیریل لیف سپاٹ",
+    "symptom_keywords": ["water-soaked spots", "small dark spots", "yellow halo", "leaf spots", "lesions on fruit", "leaf drop"],
+    "likely_causes_urdu": "یہ بیماری بیکٹیریا (Xanthomonas) کی وجہ سے ہوتی ہے جو متاثرہ بیج، پودوں پر چھڑکنے والا پانی اور نمی والے موسم کے ذریعے پھیلتی ہے۔",
+    "low_cost_treatment_urdu": [
+      "متاثرہ پتے اور پھل فوری طور پر ہٹا کر تلف کریں۔",
+      "کاپر پر مبنی فنگسائیڈ سپرے بیکٹیریل سپاٹ کی رفتار کم کرنے میں مددگار ہو سکتا ہے۔",
+      "اوپر سے پانی دینے (overhead irrigation) سے گریز کریں تاکہ پانی کی چھڑک سے بیماری نہ پھیلے۔"
+    ],
+    "prevention_tips_urdu": [
+      "تصدیق شدہ ڈیزیز فری بیج یا ٹرانسپلانٹ استعمال کریں۔",
+      "ٹماٹر والی فصل کی جگہ کم از کم دو سال تک دیگر فصلیں اگائیں۔",
+      "پودوں کے درمیان ہوا کی گزر بہتر رکھیں۔"
+    ],
+    "when_to_seek_expert_urdu": "اگر پھلوں پر بھی زخم نظر آئیں یا بیماری تیزی سے پورے کھیت میں پھیلے تو زرعی ماہر سے رابطہ کریں۔"
+  },
+  {
+    "id": "tomato_late_blight",
+    "crop": "Tomato",
+    "issue_name_english": "Tomato Late Blight",
+    "issue_name_urdu": "ٹماٹر کا جھلساؤ (لیٹ بلائٹ)",
+    "symptom_keywords": ["dark greasy patches", "water-soaked lesions", "white mold", "black stem", "rotting fruit", "leaf tips dark"],
+    "likely_causes_urdu": "یہ مہلک فنگل بیماری (Phytophthora infestans) ٹھنڈے اور نمی والے موسم میں تیزی سے پھیلتی ہے۔",
+    "low_cost_treatment_urdu": [
+      "متاثرہ پودوں کے حصے فوری کاٹ کر دور لے جا کر تلف کریں، کمپوسٹ میں نہ ڈالیں۔",
+      "منکوزیب (Mancozeb) یا متعلقہ فنگسائیڈ کا سپرے زرعی مشورہ پر کریں۔",
+      "پتوں کو خشک رکھیں — شام کو پانی نہ دیں۔"
+    ],
+    "prevention_tips_urdu": [
+      "کثیف کاشت سے گریز کریں تاکہ ہوا چل سکے۔",
+      "جڑوں کے پاس پانی دیں، پتوں پر نہیں۔",
+      "آلو اور ٹماٹر کی فصل ایک ہی جگہ بار بار نہ اگائیں۔"
+    ],
+    "when_to_seek_expert_urdu": "اگر تنوں اور پھلوں پر کالی جھلسن نظر آئے تو یہ ہنگامی حالت ہے — فوری طور پر زرعی محکمے سے رابطہ کریں۔"
+  },
+  {
+    "id": "tomato_septoria_leaf_spot",
+    "crop": "Tomato",
+    "issue_name_english": "Tomato Septoria Leaf Spot",
+    "issue_name_urdu": "سپٹوریا لیف سپاٹ (ٹماٹر)",
+    "symptom_keywords": ["round spots", "dark border", "light gray center", "many small spots", "lower leaves first", "yellowing", "leaf drop"],
+    "likely_causes_urdu": "فنگس (Septoria lycopersici) بارش کی چھڑک اور نمی سے پھیلتی ہے، عام طور پر نچلے پرانے پتوں سے شروع ہوتی ہے۔",
+    "low_cost_treatment_urdu": [
+      "متاثرہ نچلے پتے ہٹا کر تلف کریں۔",
+      "کاپر یا کلوروٹھالونیل پر مبنی سپرے مقررہ وقفے پر دہرائیں۔",
+      "پتوں کے نیچے والے حصے پر بھی سپرے پہنچائیں۔"
+    ],
+    "prevention_tips_urdu": [
+      "جلٹی (mulch) بچھانے سے مٹی کے спорے پودوں پر نہیں چڑھتے۔",
+      "پودوں کے درمیان فاصلہ اور ہوا کی گزر بہتر رکھیں۔",
+      "فصل کی ادل بدل کریں۔"
+    ],
+    "when_to_seek_expert_urdu": "اگر پتے تیزی سے گرنے لگیں اور پودا کمزور ہوتے نظر آئے تو ماہرِ زراعت سے مشورہ کریں۔"
+  },
+  {
+    "id": "tomato_two_spotted_spider_mites",
+    "crop": "Tomato",
+    "issue_name_english": "Spider Mites (Two-Spotted Spider Mite)",
+    "issue_name_urdu": "دو دھبی مکڑی کا ٹیلہ (سپائیڈ مائٹس)",
+    "symptom_keywords": ["fine webbing", "yellow speckles", "stippling", "bronzing leaves", "underside insects", "dry hot weather"],
+    "likely_causes_urdu": "گرم اور خشک موسم میں سپائیڈ مائٹس تیزی سے بڑھتے ہیں جو پتوں کے نیچے سے رس چوستے ہیں۔",
+    "low_cost_treatment_urdu": [
+      "پتوں کے نیچے والے حصے پر زور دار پانی کی دھار ماریں تاکہ ٹیلے کم ہوں۔",
+      "نیم کے تیل یا کیڑے مار محلول کا سپرے صبح یا شام کے وقت کریں۔",
+      "متاثرہ پودوں سے جڑی بوٹیاں صاف رکھیں۔"
+    ],
+    "prevention_tips_urdu": [
+      "فصل کو پانی کی مناسب فراہمی سے تندرست رکھیں۔",
+      "وسیع الاثر (broad-spectrum) کیڑے مار زیادہ استعمال نہ کریں جو قدرتی دشمن کیڑوں کو مار دیتے ہیں۔"
+    ],
+    "when_to_seek_expert_urdu": "اگر جالا دار نمونے پورے کھیت میں پھیل جائیں اور پتے بھورے ہو کر گرنے لگیں تو زرعی ماہر سے مشورہ کریں۔"
+  },
+  {
+    "id": "tomato_healthy",
+    "crop": "Tomato",
+    "issue_name_english": "Healthy Tomato Plant",
+    "issue_name_urdu": "تندورست ٹماٹر کا پودا",
+    "symptom_keywords": ["green leaves", "no spots", "uniform color", "healthy", "vigorous growth"],
+    "likely_causes_urdu": "پودے میں بیماری یا کیڑے کے آثار نہیں دیکھے گئے — یہ معمول کی صحت مند نشوونما ہے۔",
+    "low_cost_treatment_urdu": [
+      "کوئی علاج ضروری نہیں — معمول کے مطابق پانی اور کھاد جاری رکھیں۔",
+      "ہفتے میں ایک بار پتوں کے اوپر اور نیچے کا معائنہ کریں۔",
+      "اگر نئے نشانات، پیلاہٹ یا curling نظر آئے تو تازہ تصویر اپ لوڈ کریں۔"
+    ],
+    "prevention_tips_urdu": [
+      "ہوا کی گزر اور مٹی کی نمی متوازن رکھیں۔",
+      "متاثرہ پودوں سے دوری برقرار رکھیں (rogue) اگر باغ میں کوئی بیماری پھیل رہی ہو۔"
+    ],
+    "when_to_seek_expert_urdu": "ضرورت نہیں — البتہ اگر بعد میں اچانک پتے مرجھائیں یا پیلے ہوں تو نئی تصویر کے ساتھ دوبارہ جانچ کروائیں۔"
+  },
+  {
+    "id": "potato_early_blight",
+    "crop": "Potato",
+    "issue_name_english": "Potato Early Blight",
+    "issue_name_urdu": "آلو کا ابتدائی جھلساؤ (ایرلی بلائٹ)",
+    "symptom_keywords": ["concentric rings", "target-like spots", "dark brown spots", "yellowing older leaves", "leaf drop"],
+    "likely_causes_urdu": "فنگس (Alternaria solani) پرانے پودوں کے بقايا اور مٹی میں رہتی ہے؛ گرم اور نم موسم میں نچلے پرانے پتوں سے شروع ہوتی ہے۔",
+    "low_cost_treatment_urdu": [
+      "متاثرہ پتے ہٹا کر تلف کریں۔",
+      "منکوزیب پر مبنی سپرے کی مقررہ خوراک زرعی دکان کے مشورے سے استعمال کریں۔",
+      "پودوں کو متوازن کھاد سے تقویت دیں؛ کمزور پودے جلد متاثر ہوتے ہیں۔"
+    ],
+    "prevention_tips_urdu": [
+      "ایک ہی جگہ آلو یا ٹماٹر بار بار نہ اگائیں (2-3 سال ادل بدل)۔",
+      "صبح کو پانی دیں تاکہ پتے جلد خشک ہوں۔",
+      "فصل کی باقيات کو plough کر کے مٹی میں ملانے سے قبل تعفن مکمل ہونے دیں۔"
+    ],
+    "when_to_seek_expert_urdu": "اگر دھبے تیزی سے اوپر والے پتوں تک پہنچیں یا فصل بڑی کمزور ہو جائے تو ماہر سے مشورہ کریں۔"
+  },
+  {
+    "id": "potato_late_blight",
+    "crop": "Potato",
+    "issue_name_english": "Potato Late Blight",
+    "issue_name_urdu": "آلو کا تاخیری جھلساؤ (لیٹ بلائٹ)",
+    "symptom_keywords": ["water-soaked dark patches", "white mold underside", "black stems", "rotting tubers", "musty smell", "leaf edges dark"],
+    "likely_causes_urdu": "فٹھورہ (Phytophthora infestans) ٹھنڈے، میہ اور دھند والے موسم میں گھنٹوں میں پورے کھیت میں پھیل سکتا ہے۔",
+    "low_cost_treatment_urdu": [
+      "متاثرہ پودے فوری اکھاڑ کر گہرے دفن یا تلف کریں۔",
+      "فنگسائیڈ (منکوزیب + میٹالیکسس جیسے مرکب) کا استعمال زرعی مشیر کے نسخے پر کریں۔",
+      "آلودہ ٹیوبرز کو محفوظ ٹیوبرز سے الگ رکھیں، انہیں کمپوسٹ نہ بنائیں۔"
+    ],
+    "prevention_tips_urdu": [
+      "تصدیق شدہ صحت مند seed tubers استعمال کریں۔",
+      "مٹی چڑھا کر (hilling) ٹیوبرز کو اوپر آنے سے روکیں۔",
+      "خشک موسم میں کٹائی کریں اور ٹیوبرز کو ٹھنڈا اور خشک جگہ محفوظ کریں۔"
+    ],
+    "when_to_seek_expert_urdu": "یہ سب سے تباہ کن آلو بیماری ہے — پہلے اعلان ملتے ہی فوری زرعی محکمے سے رابطہ کریں۔"
+  },
+  {
+    "id": "potato_healthy",
+    "crop": "Potato",
+    "issue_name_english": "Healthy Potato Plant",
+    "issue_name_urdu": "تندورست آلو کا پودا",
+    "symptom_keywords": ["green leaves", "no spots", "healthy foliage", "uniform growth"],
+    "likely_causes_urdu": "پودے میں بیماری یا کیڑے کے واضح آثار نہیں — یہ صحت مند نشوونما کی علامت ہے۔",
+    "low_cost_treatment_urdu": [
+      "کوئی علاج ضروری نہیں — پانی اور کھاد کا معمول جاری رکھیں۔",
+      "ہفتہ وار معائنہ کریں، خاص طور پر پرانے نچلے پتوں کے۔",
+      "جھلساؤ والے علاقوں میں موسم کی خبروں پر نظر رکھیں۔"
+    ],
+    "prevention_tips_urdu": [
+      "متوازن پانی اور نائٹروجن رکھیں۔",
+      "اوپر سے پانی دینے سے گریز کریں۔"
+    ],
+    "when_to_seek_expert_urdu": "ضرورت نہیں — اگر بعد میں کوئی دھبہ، جھلسن یا سڑن نظر آئے تو نئی تصویر اپ لوڈ کریں۔"
+  },
+  {
+    "id": "corn_common_rust",
+    "crop": "Corn (Maize)",
+    "issue_name_english": "Corn Common Rust",
+    "issue_name_urdu": "مکئی کی عام زنگ (کامن رَسٹ)",
+    "symptom_keywords": ["rust", "orange pustules", "brown spots", "powdery residue", "spores rub off"],
+    "likely_causes_urdu": "فنگل زنگ کے سپور ہوا کے ذریعے پھیلتے ہیں؛ نرم موسمی صورتحال اور اعتدالی درجہ حرارت میں تیز ہوتے ہیں۔",
+    "low_cost_treatment_urdu": [
+      "زیادہ تر حالات میں معتدل زنگ فصل کو زیادہ نقصان نہیں دیتا؛ اضافی علاج کی ضرورت نہیں۔",
+      "شدید حملے میں متاثرہ پتے ہٹا کر تلف کریں۔",
+      "متوازن نائٹروجن کھاد سے پودوں کی مزاحمت بہتر بنائیں۔"
+    ],
+    "prevention_tips_urdu": [
+      "زنگ مزاحم مکئی کے hybrid استعمال کریں۔",
+      "مبصرہ کاشت (early planting) سے بچاؤ بہتر ہوتا ہے۔"
+    ],
+    "when_to_seek_expert_urdu": "اگر دانے بننے کے مرحلے تک زنگ پورے کھیت میں پھیل جائے تو زرعی ماہر سے مشورہ کریں۔"
+  },
+  {
+    "id": "corn_gray_leaf_spot",
+    "crop": "Corn (Maize)",
+    "issue_name_english": "Corn Gray Leaf Spot (Cercospora / Grey Leaf Spot)",
+    "issue_name_urdu": "مکئی کا گرئی لیف سپاٹ",
+    "symptom_keywords": ["rectangular spots", "gray tan lesions", "brown borders", "between veins", "parallel lines", "lower leaves first"],
+    "likely_causes_urdu": "فنگس (Cercospora zeae-maydis) پودوں کی باقيات میں گزارہ کرتی ہے اور نمی والے گرم موسم میں پھیلती ہے۔",
+    "low_cost_treatment_urdu": [
+      "متاثرہ پودوں کی بقايا کمپوسٹ یا ploughing سے مکمل تعفن تک ہٹا دیں۔",
+      "شدید صورت میں زرعی مشیر کے مشورے سے فنگسائیڈ سپرے۔"
+    ],
+    "prevention_tips_urdu": [
+      "کم از کم ایک سال کی ادل بدل (soybean/alfalfa) مؤثر ہے۔",
+      "گرئی لیف سپاٹ مزاحم hybrid کو ترجیح دیں۔"
+    ],
+    "when_to_seek_expert_urdu": "اگر نشانات اوپر والے پتوں تک پہنچ کر فوٹو سینتھیسس کو نقصان پہنچا رہے ہوں تو ماہر سے رابطہ کریں۔"
+  },
+  {
+    "id": "corn_northern_leaf_blight",
+    "crop": "Corn (Maize)",
+    "issue_name_english": "Corn Northern Leaf Blight",
+    "issue_name_urdu": "مکئی کا شمالی جھلساؤ (نارتھرن لیف بلائٹ)",
+    "symptom_keywords": ["cigar-shaped lesions", "long gray-green spots", "elliptical spots", "tan lesions", "leaf tips"],
+    "likely_causes_urdu": "فنگس (Exserohilum turcicum) پودوں کی باقيات میں رہتی ہے؛ ٹھنڈے، نمی والے موسم میں پھیلتی ہے۔",
+    "low_cost_treatment_urdu": [
+      "ابتدائی حملے میں متاثرہ پودوں کے پتے ہٹا دیں۔",
+      "شدید کیس میں زرعی مشورہ پر فنگسائیڈ کا ایک یا دو سپرے۔"
+    ],
+    "prevention_tips_urdu": [
+      "کھیت کی باقیات کی مناسب دیکھ بھال — ploughing اور مکمل تعفن۔",
+      "مزاحم hybrid اور موزاں فصل کی ادل بدل۔"
+    ],
+    "when_to_seek_expert_urdu": "اگر دانے بھرنے سے پہلے بیشتر پتوں پر لمبے دھبے ہوں تو پیداوار بچانے کے لیے فوری ماہرِ زراعت سے مشورہ کریں۔"
+  },
+  {
+    "id": "corn_healthy",
+    "crop": "Corn (Maize)",
+    "issue_name_english": "Healthy Corn Plant",
+    "issue_name_urdu": "تندورست مکئی کا پودا",
+    "symptom_keywords": ["green leaves", "no spots", "healthy maize", "strong stalk"],
+    "likely_causes_urdu": "کوئی بیماری یا کیڑا نظر نہیں آیا — پودا صحت مند ہے۔",
+    "low_cost_treatment_urdu": [
+      "کوئی علاج ضروری نہیں — معمول کی دیکھ بھال جاری رکھیں۔",
+      "بلنگ اور دانے بھرنے کے مراحل میں ہفتہ وار معائنہ رکھیں۔"
+    ],
+    "prevention_tips_urdu": [
+      "متوازن کھاد اور مناسب پانی۔",
+      "کثیف کاشت سے گریز تاکہ ہوا کی گزر برقرار رہے۔"
+    ],
+    "when_to_seek_expert_urdu": "ضرورت نہیں — اگر بعد میں دھبے، زنگ یا سڑن نظر آئے تو نئی تصویر کے ساتھ دوبارہ جانچ کروائیں۔"
+  },
+  {
+    "id": "citrus_huanglongbing",
+    "crop": "Orange / Citrus",
+    "issue_name_english": "Huanglongbing — Citrus Greening",
+    "issue_name_urdu": "ہوانگ لونگ بنگ (سٹرس گریننگ / نارنگی کی سبز بیماری)",
+    "symptom_keywords": ["yellow mottling", "asymmetric blotches", "yellow shoots", "small lopsided fruit", "fruit drop", "bare branches"],
+    "likely_causes_urdu": "یہ بیکٹیریل بیماری سٹرس psyllid (Diaphorina citri) نامی چھوٹے کیڑے کے ذریعے پھیلتی ہے؛ متاثرہ درخت صحت مند باغ کو خطرے میں ڈالتا ہے۔",
+    "low_cost_treatment_urdu": [
+      "اس بیماری کا کوئی علاج نہیں — متاثرہ درخت کو کاٹ کر تلف کرنا باغ کی حفاظت کا واحد مؤثر طریقہ ہے۔",
+      "psyllid کیڑے کے کنٹرول کے لیے زرعی مشیر کے تجویز کردہ طریقہ اپنائیں۔",
+      "باقی درختوں کی تغذیہ (micronutrient spray) سے ان کی صحت بہتر رکھی جا سکتی ہے۔"
+    ],
+    "prevention_tips_urdu": [
+      "نرسری سے صرف مصدقہ صحت مند پودے خریدیں۔",
+      "psyllid کی موجودگی کا باقاعدہ معائنہ رکھیں۔",
+      "نئے پودوں کی کاشت سے پہلے باغ کی صفائی یقینی بنائیں۔"
+    ],
+    "when_to_seek_expert_urdu": "ہر حال — HLB کا شبہ ہونے پر فوری باغانی ماہر/زرعی محکمے سے رابطہ کریں، کیونکہ متاثرہ درخت کے کاٹنے کے مقامی ضوابط ہو سکتے ہیں۔"
+  },
+  {
+    "id": "background_no_leaf_detected",
+    "crop": "General / Multiple crops",
+    "issue_name_english": "No Plant or Leaf Detected",
+    "issue_name_urdu": "تصویر میں کوئی پودا یا پتا نہیں",
+    "symptom_keywords": ["no leaf", "no plant", "background", "blurry", "empty image", "not a plant"],
+    "likely_causes_urdu": "اس تصویر میں تشخیص کے لیے کوئی قابلِ استعمال پودا یا پتا نظر نہیں آ رہا — ممکن ہے تصویر دھندلی ہو، فاصلے سے ہو، یا پودا نہ ہو۔",
+    "low_cost_treatment_urdu": [
+      "متاثرہ پتے، تنے یا پھل کی قریب سے، روشن اور واضح تصویر اپ لوڈ کریں۔",
+      "تصویر میں ایک ہی پودے کا واضح حصہ ہو تاکہ نشانات پہچانے جا سکیں۔",
+      "اگر پورے پودے کا مسئلہ ہے تو ایک دور کی اور ایک قریب کی دونوں تصاویر بھیجیں۔"
+    ],
+    "prevention_tips_urdu": [
+      "تصویر کھینچتے وقت فوکس اور روشنی کا خیال رکھیں۔"
+    ],
+    "when_to_seek_expert_urdu": "اگر واضح تصویر اپ لوڈ کرنے کے بعد بھی تشخیص ممکن نہ ہو تو قریبی زرعی مرکز سے بذریعہ مشورہ کریں۔"
   }
 ]

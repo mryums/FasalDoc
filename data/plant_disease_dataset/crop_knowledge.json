@@ -438,6 +438,81 @@
           "confidence_notes": "Symptoms and advice preserved; causal agent and prevention added."
         },
         {
+          "disease_id": "DS063",
+          "name": {
+            "en": "Spider Mites (Two-Spotted Spider Mite)",
+            "ur": "دو دھبی مکڑی کا ٹیلہ (سپائیڈ مائٹس)"
+          },
+          "aliases": [
+            "spider mites",
+            "spider mite",
+            "two-spotted spider mite",
+            "two spotted spider mites",
+            "red spider mite",
+            "makri",
+            "makray ka tela"
+          ],
+          "type": "pest",
+          "causal_agent": "Tetranychus urticae (two-spotted spider mite)",
+          "description": {
+            "en": "Tiny sap-sucking pests (not insects) that cluster on the underside of leaves and multiply explosively in hot, dry weather. They pierce leaf cells and drain their contents, leaving thousands of pale speckles, fine webbing and eventually bronzed, dropping leaves.",
+            "ur": "یہ پودے کا رس چوسنے والے انتہائی باریک ٹیلے گرم اور خشک موسم میں تیزی سے پھیلتے ہیں اور پتوں کے نیچے بیٹھ کر رس چوستے ہیں۔ اس سے پتوں پر ہزاروں باریک پیلی ڈھبے (پھنک) نمودار ہوتے ہیں، نیچے کی طرف باریک جالے بن جاتے ہیں اور آخرکار پتے بھورے ہو کر گرنے لگتے ہیں۔"
+          },
+          "symptoms": {
+            "en": [
+              "Fine pale yellow speckles (stippling) appear on leaves, most obvious on the lower, older leaves first.",
+              "Thin, silk-like webbing is visible on the underside of leaves and between leaf and stem joints, especially in heavy infestations.",
+              "Heavily fed leaves turn dull bronze or grey-green, look dried out, and fall off while still relatively green.",
+              "Damage spreads fastest during hot, dry, dusty weather and under stinging sun; colonies congregate on leaf undersides."
+            ],
+            "ur": [
+              "پتوں پر باریک پیلا ڈھبے (stippling) نظر آتے ہیں، جو سب سے پہلے نچلے پرانے پتوں پر نمایاں ہوتے ہیں۔",
+              "پتوں کی نیچی سطح اور پتے تنے کے جوڑوں پر باریک ریشم جیسے جالے دکھائی دیتے ہیں، خاص طور پر شدید حملے میں۔",
+              "زیادہ نقصان والے پتے دھانسے بھورے یا سرمئی سبز ہو جاتے ہیں، سوکھے سے لگتے ہیں اور سرے ہی سے جڑے ہوئے گرنے لگتے ہیں۔",
+              "گرم، خشک اور دھول بھرے موسم میں نقصان سب سے تیزی سے پھیلتا ہے؛ ٹیلے پتوں کے نیچے گچھوں میں بیٹھتے ہیں۔"
+            ]
+          },
+          "causes": {
+            "en": "Two-spotted spider mites (Tetranychus urticae) thrive in hot, dry conditions. They spread by air currents, dust, weeds and on tools, clothing and from plant to plant. Broad-spectrum insecticides often make outbreaks worse by killing their natural predatory enemies.",
+            "ur": "دو دھبی مکڑی کا ٹیلہ (Tetranychus urticae) گرم اور خشک حالات میں تیزی سے بڑھتا ہے۔ یہ ہوا، دھول، جڑی بوٹیوں، اوزاروں اور کپڑوں کے ذریعے ایک پودے سے دوسرے پودے تک پھیلتا ہے۔ وسیع الاثر (broad-spectrum) کیڑے مار ادویات اکثر اس کے قدرتی دشمن کیڑوں کو مار کر حملے کو مزید بڑھا دیتی ہیں۔"
+          },
+          "treatment": {
+            "en": [
+              "Spray the undersides of affected leaves with a strong jet of water to physically knock down mite colonies; repeat every few days.",
+              "Apply neem oil or insecticidal soap thoroughly to leaf undersides in the early morning or evening, following the product label.",
+              "For heavy infestations, use a miticide recommended for two-spotted spider mite and confirm the dose with a local agriculture expert or dealer; rotate products to avoid resistance.",
+              "Keep the field free of weeds around plants, which host mites and let them rebuild after treatment."
+            ],
+            "ur": [
+              "متاثرہ پتوں کے نیچے والے حصے پر زور دار پانی کی دھار ماریں تاکہ ٹیلے ٹوٹ کر کم ہوں؛ یہ چند دن کے وقفے سے دہرائیں۔",
+              "نیم کے تیل یا صابنی محلول (insecticidal soap) کا سپرے صبح یا شام کے وقت پتوں کی نیچی سطح پر مکمل کریں، لیبل کی ہدایت کے مطابق۔",
+              "شدید حملے میں دو دھبی مکڑی کے ٹیلے کے لیے تجویز کردہ مائٹیسائیڈ استعمال کریں اور مقدار کسی مقامی زرعی ماہر یا ڈیلر سے ضرور طے کریں؛ مزاحمت سے بچنے کے لیے ادویات بدل بدل کر لگائیں۔",
+              "پودوں کے گرد جڑی بوٹیاں صاف رکھیں کیونکہ وہ ٹیلوں کا پناہ گاہ ہیں اور علاج کے بعد دوبارہ پھیلنے کا ذریعہ بنتی ہیں۔"
+            ]
+          },
+          "prevention": {
+            "en": [
+              "Keep plants well watered and unstressed; drought-stressed plants are attacked first and hardest.",
+              "Avoid routine or unnecessary broad-spectrum insecticide sprays that destroy predatory mites and other natural enemies.",
+              "Monitor leaf undersides regularly in hot dry weather and act at the first sign of speckling or webbing.",
+              "Maintain some shade and humidity around the plot; dusty, exposed plantings invite outbreaks."
+            ],
+            "ur": [
+              "فصل کو پانی کی مناسب فراہمی سے تندرست رکھیں؛ پیاسے اور دبائو والے پودوں پر حملہ سب سے پہلے اور سب سے زیادہ ہوتا ہے۔",
+              "بے مقصد اور معمول کے وسیع الاثر کیڑے مار سپرے سے گریز کریں جو شکاری کیڑوں اور قدرتی دشمنوں کو مار دیتے ہیں۔",
+              "گرم خشک موسم میں پتوں کے نیچے باقاعدہ چیک کریں اور پہلی پھنک یا جالے نظر آتے ہی اقدام کریں۔",
+              "کھیت کے گرد کچھ سایہ اور نمی برقرار رکھیں؛ دھول بھرے کھلے مقامات پر ٹیلوں کا پھیلاؤ آسان ہوتا ہے۔"
+            ]
+          },
+          "images": [],
+          "source": {
+            "name": "FasalDoc local knowledge base",
+            "url": "data/knowledge_base.json (tomato_two_spotted_spider_mites)"
+          },
+          "confidence": "high",
+          "confidence_notes": "Content ported from the project's curated knowledge base entry for two-spotted spider mite (en + ur); added so MobileNetV2/Gemini 'Spider Mites' diagnosis labels resolve to a full localized entry."
+        },
+        {
           "disease_id": "DS051",
           "name": {
             "en": "Healthy (No Disease Detected)",

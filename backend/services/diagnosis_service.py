@@ -41,6 +41,9 @@ class ImageInput:
     content_type: str
     data: bytes
     question: Optional[str] = None
+    # Selected UI language ('en' | 'ur' | 'rom'); providers that support
+    # localized answers (Gemini) honor it, others simply ignore it.
+    language: Optional[str] = None
 
 
 class DiagnosisProvider(Protocol):
@@ -160,21 +163,37 @@ def run_diagnosis(
     data: bytes = b"",
     content_type: str = "image/jpeg",
     question: Optional[str] = None,
+    language: Optional[str] = None,
 ) -> dict:
-    image = ImageInput(filename=filename, content_type=content_type, data=data, question=question)
+    image = ImageInput(
+        filename=filename, content_type=content_type, data=data,
+        question=question, language=language,
+    )
     result = get_provider().diagnose(image)
-    set_latest_context({
+    context = {
         "diagnosis": result.get("diagnosis"),
         "confidence": result.get("confidence"),
         "advice": result.get("advice"),
         "needs_expert": result.get("needs_expert"),
         "original_question": question,
-    })
+    }
+    if language is not None:
+        # Only carried when the client sends one — keeps the no-language
+        # context shape identical to before.
+        context["language"] = language
+    set_latest_context(context)
     return result
 
 
-def answer_followup(question: str, context: Optional[dict] = None) -> str:
+def answer_followup(
+    question: str,
+    context: Optional[dict] = None,
+    language: Optional[str] = None,
+) -> str:
     if context is None:
         context = get_latest_context()
+    if language is not None:
+        # Carry the selected language without mutating the stored context.
+        context = {**(context or {}), "language": language}
     return get_provider().answer_followup(question, context)
 

@@ -66,6 +66,7 @@ export interface Translation {
     symptomsTitle: string
     treatmentTitle: string
     preventionTitle: string
+    unknown: string
     moreInfo: string
     noMoreInfo: string
   }
@@ -179,7 +180,7 @@ export const translations: Record<Language, Translation> = {
       step3Title: 'Receive advice',
       step3Text: 'Get an understandable result and a recommended action.',
       cta: 'Check My Crop',
-      languagesNote: 'You can write your question in English, اردو, or Roman Urdu.',
+      languagesNote: 'You can write your question in English, Urdu, or Roman Urdu.',
     },
 
     upload: {
@@ -232,6 +233,7 @@ export const translations: Record<Language, Translation> = {
       symptomsTitle: 'Symptoms',
       treatmentTitle: 'Treatment',
       preventionTitle: 'Prevention',
+      unknown: 'Unknown',
       moreInfo: 'More Information from Crop Knowledge Base',
       noMoreInfo: 'No additional information available for this diagnosis.',
     },
@@ -398,7 +400,8 @@ export const translations: Record<Language, Translation> = {
       imageLabel: 'آپ کی فصل کی تصویر',
       symptomsTitle: 'علامات',
       treatmentTitle: 'علاج',
-      preventionTitle: 'وقاحت',
+      preventionTitle: 'بچاؤ',
+      unknown: 'نامعلوم',
       moreInfo: 'فصل علم کے ذخیرے سے مزید معلومات',
       noMoreInfo: 'اس تشخیص کے لیے مزید معلومات دستیاب نہیں ہیں۔',
     },
@@ -563,9 +566,10 @@ export const translations: Record<Language, Translation> = {
       followupCta: 'FasalDoc Se Sawal Poochein',
       newDiagnosis: 'Nayi Jaanch',
       imageLabel: 'Aap ki fasal ki tasveer',
-      symptomsTitle: 'Alaamat',
-      treatmentTitle: 'Ilaaj',
+      symptomsTitle: 'Alamaat',
+      treatmentTitle: 'Ilaj',
       preventionTitle: 'Bachao',
+      unknown: 'Naamum',
       moreInfo: 'Fasal ilm ke zakhire se mazeed maloomat',
       noMoreInfo: 'Is tashkhees ke liye mazeed maloomat dastiyab nahi hain.',
     },

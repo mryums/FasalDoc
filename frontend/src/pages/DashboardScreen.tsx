@@ -24,7 +24,7 @@ export function DashboardScreen({
   onAskQuestion,
   onVoiceInput,
 }: DashboardScreenProps) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
 
   const greeting = t.dashboard.greeting.replace('{name}', user.name)
 
@@ -85,7 +85,11 @@ export function DashboardScreen({
           <div className="crops">
             {agricultureData.supportedCrops.map((crop) => (
               <span className="crops__chip" key={crop.english}>
-                {crop.urdu ?? crop.english}
+                {lang === 'ur'
+                  ? crop.urdu ?? crop.english
+                  : lang === 'rom'
+                    ? crop.romanUrdu ?? crop.english
+                    : crop.english}
               </span>
             ))}
           </div>

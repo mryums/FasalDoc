@@ -23,7 +23,20 @@ class DiagnosisResponse(BaseModel):
     )
 
     filename: str = Field(..., description="Name of the uploaded image file.")
-    diagnosis: str = Field(..., description="Predicted disease or condition.")
+    diagnosis: str = Field(
+        ...,
+        description=(
+            "Predicted disease or condition — canonical English label used for "
+            "knowledge-base matching (see diagnosis_localized for display)."
+        ),
+    )
+    # Localized DISPLAY label for the diagnosis in the selected UI language
+    # (Urdu script / Roman Urdu). Optional: absent for English answers and for
+    # providers that do not produce one — the frontend then localizes itself.
+    diagnosis_localized: Optional[str] = Field(
+        None,
+        description="Diagnosis label in the selected UI language, when localized.",
+    )
     confidence: float = Field(
         ..., ge=0, le=1, description="Model confidence in the 0..1 range."
     )
@@ -47,6 +60,11 @@ class FollowupRequest(BaseModel):
 
     question: str = Field(
         ..., min_length=1, description="Farmer's follow-up question (non-empty)."
+    )
+    # Optional UI language selection ('en' | 'ur' | 'rom'); when omitted the
+    # language stored with the latest diagnosis (if any) is reused.
+    language: Optional[str] = Field(
+        None, description="Language for the answer: 'en', 'ur' or 'rom'."
     )
 
 

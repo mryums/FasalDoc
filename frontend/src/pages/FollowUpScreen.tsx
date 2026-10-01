@@ -1,6 +1,7 @@
 import { useLanguage } from '../i18n/LanguageContext'
 import type { DiagnosisResponse } from '../types/api'
 import { FollowUpChat } from '../components/FollowUpChat'
+import { localizedDiseaseForDiagnosis } from '../data/agriculture'
 import type { ChatMessageData } from '../components/ChatMessage'
 
 interface FollowUpScreenProps {
@@ -22,7 +23,16 @@ export function FollowUpScreen({
   initialDraft,
   onSend,
 }: FollowUpScreenProps) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
+
+  // Mirror ResultScreen: show the localized diagnosis heading so Urdu /
+  // Roman Urdu mode never surfaces the raw English class name or "Unknown".
+  const enrichedInfo = localizedDiseaseForDiagnosis(diagnosis.diagnosis, lang)
+  const displayDiagnosis =
+    enrichedInfo?.displayName ??
+    (diagnosis.diagnosis === 'Unknown'
+      ? t.result.unknown
+      : (lang !== 'en' && diagnosis.diagnosis_localized) || diagnosis.diagnosis)
 
   return (
     <div className="screen followup-screen">
@@ -34,7 +44,7 @@ export function FollowUpScreen({
         )}
         <div className="followup-context__text">
           <span className="followup-context__label">{t.followup.aboutLabel}</span>
-          <strong className="followup-context__diagnosis">{diagnosis.diagnosis}</strong>
+          <strong className="followup-context__diagnosis">{displayDiagnosis}</strong>
           <span className="followup-context__confidence">
             {t.result.confidenceLabel}: {Math.round(diagnosis.confidence * 100)}%
           </span>

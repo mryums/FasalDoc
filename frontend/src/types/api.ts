@@ -6,7 +6,15 @@
 /** Response of POST /diagnose (backend/models.py :: DiagnosisResponse) */
 export interface DiagnosisResponse {
   filename: string
+  /** Canonical English label — the KB-matching key (never shown raw in ur/rom). */
   diagnosis: string
+  /**
+   * Diagnosis label already localized to the selected UI language (Urdu script
+   * for 'ur', Latin-only Roman Urdu for 'rom'). Null/empty when the provider
+   * produced none — screens then fall back to KB localization or the English
+   * label (mirrors backend/models.py :: diagnosis_localized).
+   */
+  diagnosis_localized?: string | null
   /** 0..1 — backend guarantees Field(ge=0, le=1) */
   confidence: number
   advice: string

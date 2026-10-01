@@ -24,7 +24,9 @@ async def ask_followup(payload: FollowupRequest):
 
     # Delegate to the diagnosis service (mock offline, real AI later)
     try:
-        answer = diagnosis_service.answer_followup(payload.question)
+        answer = diagnosis_service.answer_followup(
+            payload.question, language=payload.language
+        )
     except HTTPException:
         raise
     except Exception:

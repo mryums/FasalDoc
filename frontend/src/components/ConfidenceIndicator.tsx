@@ -51,11 +51,17 @@ export function ConfidenceIndicator({ confidence }: ConfidenceIndicatorProps) {
           {pct}%
         </span>
       </div>
+      {/* Heading / caption / tip are BLOCK elements: the separation between
+          "یقین کی سطح" and its explanation comes from the markup itself, not
+          only from the column-flex CSS. Two inline <span>s concatenated into
+          one line whenever the stylesheet lagged (stale bundle) — the exact
+          "یقین کی سطحفصل ڈاکٹر..." symptom. Layout still follows the
+          ee6e5b5 .confidence__text rules, so the appearance is unchanged. */}
       <div className="confidence__text">
-        <span className="confidence__label">{t.result.confidenceLabel}</span>
-        <span className="confidence__caption">{caption}</span>
+        <h3 className="confidence__label">{t.result.confidenceLabel}</h3>
+        <p className="confidence__caption">{caption}</p>
         {band !== 'high' && (
-          <span className="confidence__tip">{t.result.lowConfidenceAdvice}</span>
+          <p className="confidence__tip">{t.result.lowConfidenceAdvice}</p>
         )}
       </div>
     </div>

@@ -133,7 +133,7 @@ function reducer(state: FlowState, action: Action): FlowState {
 }
 
 export default function App() {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const [state, dispatch] = useReducer(reducer, initialState)
   const [user, setUser] = useState<AuthUser | null>(null)
   const idCounter = useRef(0)
@@ -200,7 +200,7 @@ export default function App() {
     const file = state.file
     const question = state.question
 
-    diagnoseImage(file, question)
+    diagnoseImage(file, question, lang)
       .then((diagnosis) => dispatch({ type: 'diagnosis-success', diagnosis }))
       .catch((err: unknown) =>
         dispatch({ type: 'diagnosis-error', error: diagnoseErrorMessage(err) }),
@@ -230,7 +230,7 @@ export default function App() {
     const id = (idCounter.current += 2)
     dispatch({ type: 'followup-start', question, id })
     try {
-      const res = await askFollowup(question)
+      const res = await askFollowup(question, lang)
       dispatch({ type: 'followup-success', id, answer: res.answer })
     } catch (err) {
       dispatch({ type: 'followup-error', error: followupErrorMessage(err) })

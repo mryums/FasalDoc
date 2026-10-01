@@ -60,15 +60,21 @@ async function parseBackendError(res: Response): Promise<ApiError> {
 /**
  * POST /diagnose — multipart upload, field name must be "image"
  * (backend/routes/diagnose.py :: image: UploadFile = File(...)).
+ * `language` carries the selected UI language ('en' | 'ur' | 'rom') so the
+ * AI answers in the same language (optional `language` Form field).
  */
 export async function diagnoseImage(
   file: File,
   question?: string,
+  language?: string,
 ): Promise<DiagnosisResponse> {
   const form = new FormData()
   form.append('image', file)
   if (question && question.trim()) {
     form.append('question', question.trim())
+  }
+  if (language) {
+    form.append('language', language)
   }
 
   let res: Response
@@ -83,17 +89,20 @@ export async function diagnoseImage(
 }
 
 /**
- * POST /ask-followup — JSON body { question } per FollowupRequest.
- * The current backend schema only carries the question; the diagnosis
- * context is kept in frontend state and shown in the chat header.
+ * POST /ask-followup — JSON body { question, language? } per FollowupRequest.
+ * The diagnosis context is kept server-side; `language` is the selected UI
+ * language so the answer matches it.
  */
-export async function askFollowup(question: string): Promise<FollowupResponse> {
+export async function askFollowup(
+  question: string,
+  language?: string,
+): Promise<FollowupResponse> {
   let res: Response
   try {
     res = await fetch(`${API_BASE}/ask-followup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question }),
+      body: JSON.stringify({ question, ...(language ? { language } : {}) }),
     })
   } catch {
     throw new ApiError('', 'network')

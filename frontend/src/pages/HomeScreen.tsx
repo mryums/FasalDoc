@@ -17,7 +17,7 @@ function steps(t: Translation) {
 }
 
 export function HomeScreen({ onStart }: HomeScreenProps) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
 
   return (
     <div className="screen home">
@@ -57,7 +57,11 @@ export function HomeScreen({ onStart }: HomeScreenProps) {
         <section className="crops">
           {agricultureData.supportedCrops.map((crop) => (
             <span className="crops__chip" key={crop.english}>
-              {crop.urdu ?? crop.english}
+              {lang === 'ur'
+                ? crop.urdu ?? crop.english
+                : lang === 'rom'
+                  ? crop.romanUrdu ?? crop.english
+                  : crop.english}
             </span>
           ))}
         </section>

@@ -778,6 +778,15 @@ html.lang-ur .diagnosis-card__name {
   gap: 4px;
 }
 
+/* Heading/caption/tip are block elements (markup-level separation, robust
+   even if this stylesheet lags); zero the UA margins so the ee6e5b5 rhythm
+   (4px flex gap) is pixel-identical to the original. */
+.confidence__label,
+.confidence__caption,
+.confidence__tip {
+  margin: 0;
+}
+
 .confidence__label {
   font-weight: 700;
   font-size: 0.85rem;
