@@ -1,0 +1,25 @@
+{
+  "python": "3.11.16",
+  "tensorflow": "2.16.2",
+  "keras": "3.15.1",
+  "numpy": "1.26.4",
+  "platform": "Darwin 21.6.0 x86_64",
+  "cpu": "i386",
+  "timestamp_utc": "2026-10-02T16:04:02.885233+00:00",
+  "hyperparameters": {
+    "image_size": 224,
+    "raw_batch": 32,
+    "head_batch": 128,
+    "optimizer": "Adam(lr=1e-3)",
+    "loss": "sparse_categorical_crossentropy",
+    "max_epochs": 60,
+    "early_stopping_patience": 8,
+    "dropout": 0.3,
+    "class_weight": "balanced",
+    "base": "MobileNetV2(imagenet, frozen, include_top=False) + Rescaling(1/127.5,-1) + GAP",
+    "head": "Dropout(0.3) -> Dense(16, softmax)",
+    "seed": 42
+  },
+  "train_images": 19659,
+  "validation_images": 4216
+}

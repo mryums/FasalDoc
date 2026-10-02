@@ -1,0 +1,4 @@
+# Large training artifacts — keep out of git (dataset itself lives in data/).
+features/
+*.keras
+__pycache__/
