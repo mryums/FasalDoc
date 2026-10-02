@@ -218,6 +218,54 @@ def test_verify_ml_crop_unclear_when_call_raises():
     assert provider._verify_ml_crop(_image(), "Corn___healthy") == "unclear"
 
 
+@pytest.mark.parametrize(
+    "is_supported, matches, expected",
+    [
+        (True, True, "supported"),   # both confirm -> trust the ML class
+        (True, False, "ood"),        # supported crop but NOT the predicted one
+        (False, True, "ood"),        # unsupported wins even if it "matches"
+        (False, False, "ood"),       # clearly out of domain
+    ],
+)
+def test_verify_ml_crop_requires_both_supported_and_matching(
+    is_supported, matches, expected
+):
+    """A crop match is accepted ONLY when Gemini confirms BOTH that the crop is
+    in the model's supported set AND that it matches MobileNetV2's predicted
+    crop. `is_supported_crop=true` alone must never be enough to keep ML final.
+    """
+    payload = (
+        '{"crop_seen": "potato", "is_supported_crop": %s, "matches_ml_crop": %s}'
+        % ("true" if is_supported else "false", "true" if matches else "false")
+    )
+    provider = GeminiDiagnosisProvider(client=_FakeClient(response=_FakeResponse(payload)))
+    verdict = provider._verify_ml_crop(_image(), "Tomato___Late_blight")
+    assert verdict == expected
+
+
+def test_supported_but_mismatched_crop_defers_to_gemini_vision(fake_classifier):
+    """Potato-mismatch regression: MobileNetV2 confidently predicts
+    Tomato___Late_blight, but Gemini sees a *supported* crop (potato) that does
+    NOT match the predicted crop. The tomato disease must NOT be shown -- the
+    image is routed to Gemini Vision instead of keeping the ML diagnosis.
+    """
+    fake_classifier(_ml_ok("Tomato___Late_blight", 0.97))
+    verify = '{"crop_seen": "potato", "is_supported_crop": true, "matches_ml_crop": false}'
+    vision = (
+        '{"is_plant_photo": true, "diagnosis": "Potato Late Blight", '
+        '"confidence": 0.82, "advice": "Remove infected tubers.", '
+        '"needs_expert": false}'
+    )
+    client = _FakeClient(responses=[verify, vision])
+    provider = GeminiDiagnosisProvider(client=client)
+    provider._retrieve_kb_entries = lambda *t: []
+
+    result = provider.diagnose(_image(language="en"))
+
+    assert result["diagnosis"] == "Potato Late Blight"  # never the ML tomato class
+    assert len(client.models.calls) == 2  # crop check + vision diagnosis
+
+
 def test_confident_ml_out_of_domain_defers_to_gemini_vision(fake_classifier):
     """Wheat regression: a confident 'Corn healthy' ML class must NOT be shown
     when Gemini Vision identifies the crop as wheat — it defers to Vision."""

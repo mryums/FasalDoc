@@ -1147,8 +1147,11 @@ class GeminiDiagnosisProvider(DiagnosisProvider):
 
         Returns:
           'ood'       -> Gemini clearly sees a crop OUTSIDE the model's
-                         supported set; the ML class must not be trusted.
-          'supported' -> Gemini sees a supported crop (prediction is in-domain).
+                         supported set, OR a supported crop that does NOT
+                         match the crop MobileNetV2 predicted; the ML class
+                         must not be trusted.
+          'supported' -> Gemini sees a supported crop AND it matches the crop
+                         MobileNetV2 predicted (prediction is in-domain).
           'unclear'   -> call failed / unparseable / ambiguous, so we
                          conservatively keep the ML diagnosis final.
         """
@@ -1195,13 +1198,22 @@ class GeminiDiagnosisProvider(DiagnosisProvider):
         supported_flag = parsed.get("is_supported_crop")
         matches_flag = parsed.get("matches_ml_crop")
 
-        # Explicit "different, unsupported crop" -> out of domain.
+        # Explicit "different, unsupported crop" -> out of domain. This wins
+        # even if matches_ml_crop is somehow true (rule: supported=False -> ood).
         if supported_flag is False:
             return "ood"
-        # Gemini affirmed in-domain -> trust the ML class.
-        if supported_flag is True or matches_flag is True:
+        # BOTH affirmations are REQUIRED before trusting MobileNetV2's class:
+        # the crop must be in the supported set AND must match the predicted
+        # crop. A supported crop that does NOT match the prediction (e.g. Gemini
+        # sees potato while the model claimed Tomato___Late_blight) is out of
+        # domain and must fall through to Gemini Vision instead of showing the
+        # ML disease as final. `supported_flag is True` alone is never enough.
+        if supported_flag is True and matches_flag is True:
             return "supported"
-        # No boolean given but a crop name: fall back to a keyword match.
+        if supported_flag is True and matches_flag is False:
+            return "ood"
+        # No usable booleans: fall back to a conservative keyword match on the
+        # crop name Gemini reported seeing, else keep the ML class (unclear).
         if seen:
             return "supported" if any(k in seen for k in ML_SUPPORTED_CROPS) else "ood"
         return "unclear"
