@@ -1,0 +1,12 @@
+# ML-only dependencies (kept separate from the web app's requirements.txt).
+# Intel Mac (x86_64, macOS Monterey) => requires Python 3.11 (the active
+# `ml-env`). TensorFlow ships x86_64 macOS wheels through the 2.16.x series;
+# the versions below are EXACTLY what is installed in `ml-env` and what the
+# model was trained/evaluated against, so a re-run reproduces the same numbers.
+# (Pip resolves these on this box; on Linux deployment TensorFlow 2.16 works
+# under Python 3.11 as well.)
+tensorflow==2.16.2
+numpy==1.26.4
+scikit-learn==1.9.1
+matplotlib==3.11.2
+pillow==12.3.0
