@@ -1,0 +1,28 @@
+== FasalDoc reproducible data-prep (Phase-2 PHASE C) ==
+  16 classes (from mapping), seed 42, ratios (0.7, 0.15, 0.15)
+
+  per-class: EXISTING on-disk split  vs  BUILDER deterministic plan
+    Background_without_leaves                          ex   800/ 172/ 171  plan   800/ 171/ 172  <-- differs
+    Corn___Cercospora_leaf_spot Gray_leaf_spot         ex   359/  77/  77  plan   359/  77/  77
+    Corn___Common_rust                                 ex   834/ 179/ 179  plan   834/ 179/ 179
+    Corn___Northern_Leaf_Blight                        ex   689/ 148/ 148  plan   690/ 148/ 147  <-- differs
+    Corn___healthy                                     ex   814/ 174/ 174  plan   813/ 174/ 175  <-- differs
+    Orange___Haunglongbing_(Citrus_greening)           ex  3855/ 826/ 826  plan  3855/ 826/ 826
+    Potato___Early_blight                              ex   700/ 150/ 150  plan   700/ 150/ 150
+    Potato___Late_blight                               ex   700/ 150/ 150  plan   700/ 150/ 150
+    Potato___healthy                                   ex   106/  23/  23  plan   106/  23/  23
+    Tomato___Bacterial_spot                            ex  1489/ 319/ 319  plan  1489/ 319/ 319
+    Tomato___Early_blight                              ex   700/ 150/ 150  plan   700/ 150/ 150
+    Tomato___Late_blight                               ex  1336/ 287/ 286  plan  1336/ 286/ 287  <-- differs
+    Tomato___Septoria_leaf_spot                        ex  1240/ 266/ 265  plan  1240/ 266/ 265
+    Tomato___Spider_mites Two-spotted_spider_mite      ex  1173/ 252/ 251  plan  1173/ 251/ 252  <-- differs
+    Tomato___Tomato_Yellow_Leaf_Curl_Virus             ex  3750/ 804/ 803  plan  3750/ 804/ 803
+    Tomato___healthy                                   ex  1114/ 239/ 238  plan  1114/ 239/ 238
+
+  existing totals : {'train': 19659, 'validation': 4216, 'test': 4210} (sum 28085)
+  builder totals  : {'train': 19659, 'validation': 4213, 'test': 4213} (sum 28085)
+  cross-split duplicate SHA-1s in existing split : 0
+  corrupt images in existing split : 0
+  per-class count mismatches (existing vs builder) : 5
+
+  wrote ml/dataset_manifest.json

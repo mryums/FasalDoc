@@ -1,0 +1,321 @@
+{
+  "generated_utc": "2026-10-02T14:53:00.496893+00:00",
+  "purpose": "FasalDoc Phase-2 16-class image-classification split manifest",
+  "source": "data/plantvillage_raw/Plant_leave_diseases_dataset_without_augmentation",
+  "dataset": "data/ml_dataset",
+  "single_source_of_truth": "backend/ml_models/FasalDoc_class_mapping.json",
+  "num_classes": 16,
+  "seed": 42,
+  "split_ratios": {
+    "train": 0.7,
+    "validation": 0.15,
+    "test": 0.15
+  },
+  "duplicate_policy": "SHA-1 content hash; every duplicate group kept entirely within one split",
+  "class_order": [
+    "Background_without_leaves",
+    "Corn___Cercospora_leaf_spot Gray_leaf_spot",
+    "Corn___Common_rust",
+    "Corn___Northern_Leaf_Blight",
+    "Corn___healthy",
+    "Orange___Haunglongbing_(Citrus_greening)",
+    "Potato___Early_blight",
+    "Potato___Late_blight",
+    "Potato___healthy",
+    "Tomato___Bacterial_spot",
+    "Tomato___Early_blight",
+    "Tomato___Late_blight",
+    "Tomato___Septoria_leaf_spot",
+    "Tomato___Spider_mites Two-spotted_spider_mite",
+    "Tomato___Tomato_Yellow_Leaf_Curl_Virus",
+    "Tomato___healthy"
+  ],
+  "totals_existing": {
+    "train": 19659,
+    "validation": 4216,
+    "test": 4210
+  },
+  "total_existing_images": 28085,
+  "totals_builder_planned": {
+    "train": 19659,
+    "validation": 4213,
+    "test": 4213
+  },
+  "cross_split_duplicate_sha1": 0,
+  "corrupt_images_in_existing_split": 0,
+  "augmentation": "none (documented; the shipped model was trained without augmentation)",
+  "per_class": {
+    "Background_without_leaves": {
+      "crop": "Background_without_leaves",
+      "raw_images": 1143,
+      "existing_split": {
+        "train": 800,
+        "validation": 172,
+        "test": 171
+      },
+      "existing_total": 1143,
+      "builder_planned_split": {
+        "train": 800,
+        "validation": 171,
+        "test": 172
+      },
+      "duplicate_groups_in_raw": 1,
+      "corrupt_in_raw": 0
+    },
+    "Corn___Cercospora_leaf_spot Gray_leaf_spot": {
+      "crop": "Corn",
+      "raw_images": 513,
+      "existing_split": {
+        "train": 359,
+        "validation": 77,
+        "test": 77
+      },
+      "existing_total": 513,
+      "builder_planned_split": {
+        "train": 359,
+        "validation": 77,
+        "test": 77
+      },
+      "duplicate_groups_in_raw": 0,
+      "corrupt_in_raw": 0
+    },
+    "Corn___Common_rust": {
+      "crop": "Corn",
+      "raw_images": 1192,
+      "existing_split": {
+        "train": 834,
+        "validation": 179,
+        "test": 179
+      },
+      "existing_total": 1192,
+      "builder_planned_split": {
+        "train": 834,
+        "validation": 179,
+        "test": 179
+      },
+      "duplicate_groups_in_raw": 0,
+      "corrupt_in_raw": 0
+    },
+    "Corn___Northern_Leaf_Blight": {
+      "crop": "Corn",
+      "raw_images": 985,
+      "existing_split": {
+        "train": 689,
+        "validation": 148,
+        "test": 148
+      },
+      "existing_total": 985,
+      "builder_planned_split": {
+        "train": 690,
+        "validation": 148,
+        "test": 147
+      },
+      "duplicate_groups_in_raw": 0,
+      "corrupt_in_raw": 0
+    },
+    "Corn___healthy": {
+      "crop": "Corn",
+      "raw_images": 1162,
+      "existing_split": {
+        "train": 814,
+        "validation": 174,
+        "test": 174
+      },
+      "existing_total": 1162,
+      "builder_planned_split": {
+        "train": 813,
+        "validation": 174,
+        "test": 175
+      },
+      "duplicate_groups_in_raw": 0,
+      "corrupt_in_raw": 0
+    },
+    "Orange___Haunglongbing_(Citrus_greening)": {
+      "crop": "Orange",
+      "raw_images": 5507,
+      "existing_split": {
+        "train": 3855,
+        "validation": 826,
+        "test": 826
+      },
+      "existing_total": 5507,
+      "builder_planned_split": {
+        "train": 3855,
+        "validation": 826,
+        "test": 826
+      },
+      "duplicate_groups_in_raw": 0,
+      "corrupt_in_raw": 0
+    },
+    "Potato___Early_blight": {
+      "crop": "Potato",
+      "raw_images": 1000,
+      "existing_split": {
+        "train": 700,
+        "validation": 150,
+        "test": 150
+      },
+      "existing_total": 1000,
+      "builder_planned_split": {
+        "train": 700,
+        "validation": 150,
+        "test": 150
+      },
+      "duplicate_groups_in_raw": 0,
+      "corrupt_in_raw": 0
+    },
+    "Potato___Late_blight": {
+      "crop": "Potato",
+      "raw_images": 1000,
+      "existing_split": {
+        "train": 700,
+        "validation": 150,
+        "test": 150
+      },
+      "existing_total": 1000,
+      "builder_planned_split": {
+        "train": 700,
+        "validation": 150,
+        "test": 150
+      },
+      "duplicate_groups_in_raw": 0,
+      "corrupt_in_raw": 0
+    },
+    "Potato___healthy": {
+      "crop": "Potato",
+      "raw_images": 152,
+      "existing_split": {
+        "train": 106,
+        "validation": 23,
+        "test": 23
+      },
+      "existing_total": 152,
+      "builder_planned_split": {
+        "train": 106,
+        "validation": 23,
+        "test": 23
+      },
+      "duplicate_groups_in_raw": 0,
+      "corrupt_in_raw": 0
+    },
+    "Tomato___Bacterial_spot": {
+      "crop": "Tomato",
+      "raw_images": 2127,
+      "existing_split": {
+        "train": 1489,
+        "validation": 319,
+        "test": 319
+      },
+      "existing_total": 2127,
+      "builder_planned_split": {
+        "train": 1489,
+        "validation": 319,
+        "test": 319
+      },
+      "duplicate_groups_in_raw": 0,
+      "corrupt_in_raw": 0
+    },
+    "Tomato___Early_blight": {
+      "crop": "Tomato",
+      "raw_images": 1000,
+      "existing_split": {
+        "train": 700,
+        "validation": 150,
+        "test": 150
+      },
+      "existing_total": 1000,
+      "builder_planned_split": {
+        "train": 700,
+        "validation": 150,
+        "test": 150
+      },
+      "duplicate_groups_in_raw": 0,
+      "corrupt_in_raw": 0
+    },
+    "Tomato___Late_blight": {
+      "crop": "Tomato",
+      "raw_images": 1909,
+      "existing_split": {
+        "train": 1336,
+        "validation": 287,
+        "test": 286
+      },
+      "existing_total": 1909,
+      "builder_planned_split": {
+        "train": 1336,
+        "validation": 286,
+        "test": 287
+      },
+      "duplicate_groups_in_raw": 8,
+      "corrupt_in_raw": 0
+    },
+    "Tomato___Septoria_leaf_spot": {
+      "crop": "Tomato",
+      "raw_images": 1771,
+      "existing_split": {
+        "train": 1240,
+        "validation": 266,
+        "test": 265
+      },
+      "existing_total": 1771,
+      "builder_planned_split": {
+        "train": 1240,
+        "validation": 266,
+        "test": 265
+      },
+      "duplicate_groups_in_raw": 0,
+      "corrupt_in_raw": 0
+    },
+    "Tomato___Spider_mites Two-spotted_spider_mite": {
+      "crop": "Tomato",
+      "raw_images": 1676,
+      "existing_split": {
+        "train": 1173,
+        "validation": 252,
+        "test": 251
+      },
+      "existing_total": 1676,
+      "builder_planned_split": {
+        "train": 1173,
+        "validation": 251,
+        "test": 252
+      },
+      "duplicate_groups_in_raw": 0,
+      "corrupt_in_raw": 0
+    },
+    "Tomato___Tomato_Yellow_Leaf_Curl_Virus": {
+      "crop": "Tomato",
+      "raw_images": 5357,
+      "existing_split": {
+        "train": 3750,
+        "validation": 804,
+        "test": 803
+      },
+      "existing_total": 5357,
+      "builder_planned_split": {
+        "train": 3750,
+        "validation": 804,
+        "test": 803
+      },
+      "duplicate_groups_in_raw": 0,
+      "corrupt_in_raw": 0
+    },
+    "Tomato___healthy": {
+      "crop": "Tomato",
+      "raw_images": 1591,
+      "existing_split": {
+        "train": 1114,
+        "validation": 239,
+        "test": 238
+      },
+      "existing_total": 1591,
+      "builder_planned_split": {
+        "train": 1114,
+        "validation": 239,
+        "test": 238
+      },
+      "duplicate_groups_in_raw": 6,
+      "corrupt_in_raw": 0
+    }
+  }
+}
